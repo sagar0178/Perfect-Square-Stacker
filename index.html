@@ -261,8 +261,8 @@
       'use strict';
 
       const API_URL = 'https://www.thesportsdb.com/api/v1/json/3/search_all_teams.php?l=English%20Premier%20League';
-      const ROSTER_NAME_OFFSET_STEP = 6;
-      const AWAY_ROSTER_NAME_OFFSET = 8;
+      const ROSTER_NAME_OFFSET_STEP = 6; // Name pool stride to diversify rosters across teams.
+      const AWAY_ROSTER_NAME_OFFSET = 8; // Extra offset so away names do not mirror the home roster.
       const STAMINA_START_MIN = 60;
       const STAMINA_START_RANGE = 40;
       const STAMINA_DRAIN_BASE = 0.35;
@@ -275,6 +275,9 @@
       const AI_ZONAL_DEFENSE_SPEED = 80;
       const AI_OFFENSE_SPEED = 110;
       const AI_DRIBBLING_SPEED = 130;
+      const PLAYER_RADIUS = 14;
+      const PLAYER_RING_RADIUS = 18;
+      const PLAYER_RING_STROKE_WIDTH = 2;
       const BALL_CARRIER_OFFSET = 12;
       const BALL_FRICTION_COEFFICIENT = 0.97;
       const BALL_POSSESSION_RADIUS = 18;
@@ -284,6 +287,8 @@
       const REFEREE_APPROACH_SPEED = 90;
       const REFEREE_RETREAT_SPEED = 70;
       const REFEREE_COLLISION_RADIUS = 18;
+      const REFEREE_RADIUS = 8;
+      const REFEREE_START_Y_OFFSET = -40;
       const GOAL_HEIGHT = 140;
       const GOAL_LINE_THRESHOLD = 6;
       const PENALTY_BOX_WIDTH = 120;
@@ -333,6 +338,7 @@
 
       const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
       const randomRange = (min, max) => min + Math.random() * (max - min);
+      // Convert per-second event rates into per-frame probabilities using exponential decay.
       const chancePerSecond = (ratePerSecond, dt) => Math.random() < 1 - Math.exp(-ratePerSecond * dt);
 
       const showEvent = (message) => {
@@ -483,9 +489,11 @@
           this.lastMove = new Phaser.Math.Vector2(1, 0);
 
           this.container = scene.add.container(position.x, position.y);
-          this.ring = scene.add.circle(0, 0, 18, 0x000000, 0).setStrokeStyle(2, 0xfff59d);
+          this.ring = scene
+            .add.circle(0, 0, PLAYER_RING_RADIUS, 0x000000, 0)
+            .setStrokeStyle(PLAYER_RING_STROKE_WIDTH, 0xfff59d);
           this.ring.setVisible(false);
-          this.circle = scene.add.circle(0, 0, 14, color);
+          this.circle = scene.add.circle(0, 0, PLAYER_RADIUS, color);
           this.text = scene.add.text(0, 0, String(number), {
             fontFamily: 'Inter, system-ui, sans-serif',
             fontSize: '12px',
@@ -587,6 +595,7 @@
           this.createCrowd();
           this.drawPitch();
           this.createAudio();
+          this.whistleNodes = new Set();
           this.setupInput();
           this.resetMatch();
           this.events.once(Phaser.Scenes.Events.SHUTDOWN, this.cleanupAudio, this);
@@ -636,13 +645,14 @@
             if (this.audioReady) {
               return;
             }
+            this.audioReady = true;
             const context = this.sound.context;
             if (!context) {
+              this.audioReady = false;
               return;
             }
             context.resume();
             this.buildCrowdLoop(context);
-            this.audioReady = true;
           };
           this.input.once('pointerdown', resumeAudio);
           this.input.keyboard.once('keydown', resumeAudio);
@@ -683,6 +693,16 @@
           if (this.crowdGain) {
             this.crowdGain.disconnect();
           }
+          if (this.whistleNodes) {
+            this.whistleNodes.forEach(({ osc, gain }) => {
+              try {
+                osc.stop();
+              } catch (error) {}
+              osc.disconnect();
+              gain.disconnect();
+            });
+            this.whistleNodes.clear();
+          }
         }
 
         playWhistle() {
@@ -698,6 +718,13 @@
           gain.gain.exponentialRampToValueAtTime(0.15, context.currentTime + 0.01);
           gain.gain.exponentialRampToValueAtTime(0.0001, context.currentTime + 0.2);
           osc.connect(gain).connect(context.destination);
+          const nodeEntry = { osc, gain };
+          this.whistleNodes.add(nodeEntry);
+          osc.onended = () => {
+            osc.disconnect();
+            gain.disconnect();
+            this.whistleNodes.delete(nodeEntry);
+          };
           osc.start();
           osc.stop(context.currentTime + 0.25);
         }
@@ -792,7 +819,12 @@
         }
 
         createOfficials() {
-          this.referee = this.add.circle(this.field.centerX, this.field.centerY - 40, 8, 0xe0e0e0);
+          this.referee = this.add.circle(
+            this.field.centerX,
+            this.field.centerY + REFEREE_START_Y_OFFSET,
+            REFEREE_RADIUS,
+            0xe0e0e0
+          );
           this.referee.setStrokeStyle(2, 0x222222);
 
           const coachLeft = this.add.rectangle(this.field.left - 20, this.field.centerY, 10, 30, 0xffd166);
@@ -874,7 +906,7 @@
 
         update(time, delta) {
           const dt = delta / 1000;
-          if (!dt) {
+          if (!(dt > 0)) {
             return;
           }
 
@@ -920,9 +952,11 @@
           } else {
             this.ball.sprite.x += this.ball.velocity.x * dt;
             this.ball.sprite.y += this.ball.velocity.y * dt;
-            this.ball.velocity.scale(BALL_FRICTION_COEFFICIENT);
-            if (this.ball.velocity.length() < BALL_STOP_THRESHOLD) {
-              this.ball.velocity.set(0, 0);
+            if (this.ball.velocity.lengthSq() > 0) {
+              this.ball.velocity.scale(BALL_FRICTION_COEFFICIENT);
+              if (this.ball.velocity.length() < BALL_STOP_THRESHOLD) {
+                this.ball.velocity.set(0, 0);
+              }
             }
           }
 
