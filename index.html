@@ -208,10 +208,48 @@
       opacity: 1;
     }
 
+    .help-panel {
+      position: absolute;
+      right: 16px;
+      bottom: 96px;
+      width: min(320px, 78vw);
+      background: var(--panel);
+      border-radius: 16px;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      padding: 10px 14px;
+      font-size: 0.8rem;
+      color: var(--text);
+      pointer-events: auto;
+    }
+
+    .help-panel summary {
+      cursor: pointer;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+    }
+
+    .help-panel ul {
+      margin: 8px 0 0 18px;
+      padding: 0;
+      color: var(--muted);
+      line-height: 1.4;
+    }
+
+    .help-panel li {
+      margin-bottom: 6px;
+    }
+
     @media (max-width: 720px) {
       .hud {
         flex-direction: column;
         align-items: stretch;
+      }
+
+      .help-panel {
+        right: 12px;
+        left: 12px;
+        bottom: 180px;
+        width: auto;
       }
     }
   </style>
@@ -252,6 +290,16 @@
         <p id="subText">Substitution required.</p>
       </div>
       <div id="eventLog" class="event-log"></div>
+      <details class="help-panel" open>
+        <summary>How to play</summary>
+        <ul>
+          <li>Click a home player to take control (yellow ring).</li>
+          <li>Move with WASD or click/drag on the pitch.</li>
+          <li>Control switches to the home ball carrier automatically.</li>
+          <li>Dribble into the opponent goal to score.</li>
+          <li>Tap Substitute when a player gets tired.</li>
+        </ul>
+      </details>
     </div>
   </div>
 
@@ -271,21 +319,21 @@
       const STAMINA_DRAIN_BASE = 0.35;
       const STAMINA_DRAIN_VARIANCE = 0.65;
       const STAMINA_SUBSTITUTION_THRESHOLD = 20;
-      const PASS_RATE_PER_SECOND = 0.12;
+      const PASS_RATE_PER_SECOND = 0.08;
       const PASS_SPEED = 220;
-      const FOUL_CALL_RATE_PER_SECOND = 0.7;
-      const PLAYER_MANUAL_CONTROL_SPEED = 160;
-      const AI_ZONAL_DEFENSE_SPEED = 80;
-      const AI_OFFENSE_SPEED = 110;
-      const AI_DRIBBLING_SPEED = 130;
+      const FOUL_CALL_RATE_PER_SECOND = 0.45;
+      const PLAYER_MANUAL_CONTROL_SPEED = 190;
+      const AI_ZONAL_DEFENSE_SPEED = 70;
+      const AI_OFFENSE_SPEED = 90;
+      const AI_DRIBBLING_SPEED = 100;
       const PLAYER_RADIUS = 14;
       const PLAYER_RING_RADIUS = 18;
       const PLAYER_RING_STROKE_WIDTH = 2;
       const BALL_CARRIER_OFFSET = 12;
       const BALL_FRICTION_COEFFICIENT = 0.97;
-      const BALL_POSSESSION_RADIUS = 18;
+      const BALL_POSSESSION_RADIUS = 24;
       const BALL_STOP_THRESHOLD = 5;
-      const PLAYER_SELECTION_RADIUS = 20;
+      const PLAYER_SELECTION_RADIUS = 26;
       const REFEREE_FOLLOW_DISTANCE = 50;
       const REFEREE_APPROACH_SPEED = 90;
       const REFEREE_RETREAT_SPEED = 70;
@@ -998,6 +1046,9 @@
           if (nearest) {
             this.ball.owner = nearest.player;
             nearest.player.hasBall = true;
+            if (nearest.player.teamKey === 'home') {
+              this.setControlledPlayer(nearest.player);
+            }
           }
         }
 
