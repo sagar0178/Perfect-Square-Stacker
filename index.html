@@ -261,6 +261,18 @@
       'use strict';
 
       const API_URL = 'https://www.thesportsdb.com/api/v1/json/3/search_all_teams.php?l=English%20Premier%20League';
+      const TEAM_OFFSET_MULTIPLIER = 6;
+      const AWAY_OFFSET_BONUS = 8;
+      const STAMINA_DRAIN_BASE = 0.35;
+      const STAMINA_DRAIN_VARIANCE = 0.65;
+      const PASS_PROBABILITY = 0.002;
+      const PASS_SPEED = 220;
+      const FOUL_CALL_PROBABILITY = 0.02;
+      const WHISTLE_FREQUENCY = 1200;
+      const CROWD_OSC_FREQUENCY = 180;
+      const CROWD_LFO_FREQUENCY = 0.3;
+      const CROWD_LFO_DEPTH = 40;
+      const CROWD_GAIN = 0.025;
 
       const ui = {
         homeName: document.getElementById('homeTeamName'),
@@ -351,8 +363,11 @@
         state.homeTeam = state.teams[state.homeIndex] || fallbackTeams[0];
         state.awayTeam = state.teams[state.awayIndex] || fallbackTeams[1];
         state.namePool = buildNamePool(state.teams.length ? state.teams : fallbackTeams);
-        state.rosters.home = createRoster(state.namePool, state.homeIndex * 6);
-        state.rosters.away = createRoster(state.namePool, state.awayIndex * 6 + 8);
+        state.rosters.home = createRoster(state.namePool, state.homeIndex * TEAM_OFFSET_MULTIPLIER);
+        state.rosters.away = createRoster(
+          state.namePool,
+          state.awayIndex * TEAM_OFFSET_MULTIPLIER + AWAY_OFFSET_BONUS
+        );
         updateScoreboard();
         if (state.scene) {
           state.scene.resetMatch();
@@ -465,7 +480,7 @@
         }
 
         updateStamina(dt) {
-          const drain = dt * (0.35 + Math.random() * 0.65);
+          const drain = dt * (STAMINA_DRAIN_BASE + Math.random() * STAMINA_DRAIN_VARIANCE);
           this.stamina = Math.max(0, this.stamina - drain);
           if (this.stamina < 20 && !this.subAlerted) {
             this.subAlerted = true;
@@ -603,16 +618,16 @@
 
         buildCrowdLoop(context) {
           const gain = context.createGain();
-          gain.gain.value = 0.025;
+          gain.gain.value = CROWD_GAIN;
 
           const osc = context.createOscillator();
           osc.type = 'sawtooth';
-          osc.frequency.value = 180;
+          osc.frequency.value = CROWD_OSC_FREQUENCY;
 
           const lfo = context.createOscillator();
-          lfo.frequency.value = 0.3;
+          lfo.frequency.value = CROWD_LFO_FREQUENCY;
           const lfoGain = context.createGain();
-          lfoGain.gain.value = 40;
+          lfoGain.gain.value = CROWD_LFO_DEPTH;
 
           lfo.connect(lfoGain).connect(osc.frequency);
           osc.connect(gain).connect(context.destination);
@@ -631,7 +646,7 @@
           const osc = context.createOscillator();
           const gain = context.createGain();
           osc.type = 'square';
-          osc.frequency.setValueAtTime(1200, context.currentTime);
+          osc.frequency.setValueAtTime(WHISTLE_FREQUENCY, context.currentTime);
           gain.gain.setValueAtTime(0.0001, context.currentTime);
           gain.gain.exponentialRampToValueAtTime(0.15, context.currentTime + 0.01);
           gain.gain.exponentialRampToValueAtTime(0.0001, context.currentTime + 0.2);
@@ -852,8 +867,8 @@
             const carrier = this.ball.owner;
             const offset = carrier.lastMove.clone().scale(12);
             this.ball.sprite.setPosition(carrier.container.x + offset.x, carrier.container.y + offset.y);
-            if (Math.random() < 0.002) {
-              this.releaseBall(carrier.lastMove.clone().scale(220));
+            if (Math.random() < PASS_PROBABILITY) {
+              this.releaseBall(carrier.lastMove.clone().scale(PASS_SPEED));
             }
           } else {
             this.ball.sprite.x += this.ball.velocity.x * dt;
@@ -916,7 +931,7 @@
           const collision = this.players.some((player) => {
             return Phaser.Math.Distance.Between(player.container.x, player.container.y, this.referee.x, this.referee.y) < 18;
           });
-          if (collision && Math.random() < 0.02) {
+          if (collision && Math.random() < FOUL_CALL_PROBABILITY) {
             this.playWhistle();
             showEvent('Whistle! Foul called.');
           }
