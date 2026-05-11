@@ -267,9 +267,10 @@
       const STAMINA_START_RANGE = 40;
       const STAMINA_DRAIN_BASE = 0.35;
       const STAMINA_DRAIN_VARIANCE = 0.65;
-      const PASS_PROBABILITY_PER_SECOND = 0.12;
+      const STAMINA_SUBSTITUTION_THRESHOLD = 20;
+      const PASS_RATE_PER_SECOND = 0.12;
       const PASS_SPEED = 220;
-      const FOUL_CALL_PROBABILITY_PER_SECOND = 0.7;
+      const FOUL_CALL_RATE_PER_SECOND = 0.7;
       const PLAYER_MANUAL_CONTROL_SPEED = 160;
       const AI_ZONAL_DEFENSE_SPEED = 80;
       const AI_OFFENSE_SPEED = 110;
@@ -277,6 +278,7 @@
       const BALL_CARRIER_OFFSET = 12;
       const BALL_FRICTION_COEFFICIENT = 0.97;
       const BALL_POSSESSION_RADIUS = 18;
+      const BALL_STOP_THRESHOLD = 5;
       const PLAYER_SELECTION_RADIUS = 20;
       const REFEREE_FOLLOW_DISTANCE = 50;
       const REFEREE_APPROACH_SPEED = 90;
@@ -330,6 +332,8 @@
       ];
 
       const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
+      const randomRange = (min, max) => min + Math.random() * (max - min);
+      const chancePerSecond = (ratePerSecond, dt) => Math.random() < 1 - Math.exp(-ratePerSecond * dt);
 
       const showEvent = (message) => {
         ui.eventLog.textContent = message;
@@ -435,6 +439,11 @@
           return;
         }
         const replacement = bench.shift();
+        if (!replacement) {
+          showEvent('No substitutes left.');
+          clearSubstitution();
+          return;
+        }
         player.replaceWith(replacement);
         showEvent(`${player.teamKey === 'home' ? 'Home' : 'Away'} substitution made.`);
         clearSubstitution();
@@ -466,8 +475,8 @@
           this.displayName = name;
           this.color = color;
           this.homePosition = { ...position };
-          this.stamina = STAMINA_START_MIN + Math.random() * STAMINA_START_RANGE;
-          this.staminaDrainRate = STAMINA_DRAIN_BASE + Math.random() * STAMINA_DRAIN_VARIANCE;
+          this.stamina = randomRange(STAMINA_START_MIN, STAMINA_START_MIN + STAMINA_START_RANGE);
+          this.staminaDrainRate = randomRange(STAMINA_DRAIN_BASE, STAMINA_DRAIN_BASE + STAMINA_DRAIN_VARIANCE);
           this.state = 'ZONAL_DEFENSE';
           this.hasBall = false;
           this.subAlerted = false;
@@ -501,7 +510,7 @@
         updateStamina(dt) {
           const drain = dt * this.staminaDrainRate;
           this.stamina = Math.max(0, this.stamina - drain);
-          if (this.stamina < 20 && !this.subAlerted) {
+          if (this.stamina < STAMINA_SUBSTITUTION_THRESHOLD && !this.subAlerted) {
             this.subAlerted = true;
             this.scene.queueSubstitution(this);
           }
@@ -580,6 +589,7 @@
           this.createAudio();
           this.setupInput();
           this.resetMatch();
+          this.events.once(Phaser.Scenes.Events.SHUTDOWN, this.cleanupAudio, this);
         }
 
         createCrowd() {
@@ -657,7 +667,22 @@
           lfo.start();
 
           this.crowdOsc = osc;
+          this.crowdLfo = lfo;
           this.crowdGain = gain;
+        }
+
+        cleanupAudio() {
+          if (this.crowdOsc) {
+            this.crowdOsc.stop();
+            this.crowdOsc.disconnect();
+          }
+          if (this.crowdLfo) {
+            this.crowdLfo.stop();
+            this.crowdLfo.disconnect();
+          }
+          if (this.crowdGain) {
+            this.crowdGain.disconnect();
+          }
         }
 
         playWhistle() {
@@ -889,13 +914,16 @@
             const carrier = this.ball.owner;
             const offset = carrier.lastMove.clone().scale(BALL_CARRIER_OFFSET);
             this.ball.sprite.setPosition(carrier.container.x + offset.x, carrier.container.y + offset.y);
-            if (Math.random() < PASS_PROBABILITY_PER_SECOND * dt) {
+            if (chancePerSecond(PASS_RATE_PER_SECOND, dt)) {
               this.releaseBall(carrier.lastMove.clone().scale(PASS_SPEED));
             }
           } else {
             this.ball.sprite.x += this.ball.velocity.x * dt;
             this.ball.sprite.y += this.ball.velocity.y * dt;
             this.ball.velocity.scale(BALL_FRICTION_COEFFICIENT);
+            if (this.ball.velocity.length() < BALL_STOP_THRESHOLD) {
+              this.ball.velocity.set(0, 0);
+            }
           }
 
           this.ball.sprite.x = clamp(this.ball.sprite.x, this.field.left, this.field.right);
@@ -956,7 +984,7 @@
               REFEREE_COLLISION_RADIUS
             );
           });
-          if (collision && Math.random() < FOUL_CALL_PROBABILITY_PER_SECOND * dt) {
+          if (collision && chancePerSecond(FOUL_CALL_RATE_PER_SECOND, dt)) {
             this.playWhistle();
             showEvent('Whistle! Foul called.');
           }
