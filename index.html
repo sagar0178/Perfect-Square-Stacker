@@ -261,8 +261,11 @@
       'use strict';
 
       const API_URL = 'https://www.thesportsdb.com/api/v1/json/3/search_all_teams.php?l=English%20Premier%20League';
-      const ROSTER_NAME_OFFSET_STEP = 6; // Name pool stride to diversify rosters across teams.
-      const AWAY_ROSTER_NAME_OFFSET = 8; // Extra offset so away names do not mirror the home roster.
+      const STARTER_COUNT = 11;
+      const BENCH_COUNT = 5;
+      const SQUAD_SIZE = STARTER_COUNT + BENCH_COUNT;
+      const ROSTER_NAME_OFFSET_STEP = Math.floor((SQUAD_SIZE * 3) / 8);
+      const AWAY_ROSTER_NAME_OFFSET = Math.floor(SQUAD_SIZE / 2);
       const STAMINA_START_MIN = 60;
       const STAMINA_START_RANGE = 40;
       const STAMINA_DRAIN_BASE = 0.35;
@@ -339,7 +342,7 @@
       const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
       const randomRange = (min, max) => min + Math.random() * (max - min);
       // Convert per-second event rates into per-frame probabilities using exponential decay.
-      const chancePerSecond = (ratePerSecond, dt) => Math.random() < 1 - Math.exp(-ratePerSecond * dt);
+      const chanceThisFrame = (ratePerSecond, dt) => Math.random() < 1 - Math.exp(-ratePerSecond * dt);
 
       const showEvent = (message) => {
         ui.eventLog.textContent = message;
@@ -377,13 +380,13 @@
       };
 
       const createRoster = (pool, offset) => {
-        const roster = Array.from({ length: 16 }, (_, index) => {
+        const roster = Array.from({ length: SQUAD_SIZE }, (_, index) => {
           const name = pool.length ? pool[(offset + index) % pool.length] : `Player ${index + 1}`;
           return { name, number: index + 1 };
         });
         return {
-          starters: roster.slice(0, 11),
-          bench: roster.slice(11),
+          starters: roster.slice(0, STARTER_COUNT),
+          bench: roster.slice(STARTER_COUNT),
         };
       };
 
@@ -498,7 +501,7 @@
             fontFamily: 'Inter, system-ui, sans-serif',
             fontSize: '12px',
             color: '#06121d',
-            fontStyle: '700',
+            fontWeight: '700',
           }).setOrigin(0.5);
           this.container.add([this.ring, this.circle, this.text]);
         }
@@ -697,7 +700,9 @@
             this.whistleNodes.forEach(({ osc, gain }) => {
               try {
                 osc.stop();
-              } catch (error) {}
+              } catch (error) {
+                // Ignore already-stopped oscillators during cleanup.
+              }
               osc.disconnect();
               gain.disconnect();
             });
@@ -906,7 +911,7 @@
 
         update(time, delta) {
           const dt = delta / 1000;
-          if (!(dt > 0)) {
+          if (dt <= 0) {
             return;
           }
 
@@ -944,9 +949,10 @@
         updateBall(dt) {
           if (this.ball.owner) {
             const carrier = this.ball.owner;
-            const offset = carrier.lastMove.clone().scale(BALL_CARRIER_OFFSET);
-            this.ball.sprite.setPosition(carrier.container.x + offset.x, carrier.container.y + offset.y);
-            if (chancePerSecond(PASS_RATE_PER_SECOND, dt)) {
+            const offsetX = carrier.lastMove.x * BALL_CARRIER_OFFSET;
+            const offsetY = carrier.lastMove.y * BALL_CARRIER_OFFSET;
+            this.ball.sprite.setPosition(carrier.container.x + offsetX, carrier.container.y + offsetY);
+            if (chanceThisFrame(PASS_RATE_PER_SECOND, dt)) {
               this.releaseBall(carrier.lastMove.clone().scale(PASS_SPEED));
             }
           } else {
@@ -1018,7 +1024,7 @@
               REFEREE_COLLISION_RADIUS
             );
           });
-          if (collision && chancePerSecond(FOUL_CALL_RATE_PER_SECOND, dt)) {
+          if (collision && chanceThisFrame(FOUL_CALL_RATE_PER_SECOND, dt)) {
             this.playWhistle();
             showEvent('Whistle! Foul called.');
           }
