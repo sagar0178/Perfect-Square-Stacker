@@ -2,18 +2,17 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Ultimate Penalty Shootout</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Premier League 11v11 Simulation</title>
   <style>
     :root {
-      --bg: #070a16;
-      --panel: #11162b;
-      --text: #f4f6ff;
-      --muted: #b8c0e3;
-      --accent: #4df5c5;
-      --danger: #ff6b6b;
-      --pitch: #1f8a47;
-      --pitch-dark: #16693a;
+      --bg: #05070f;
+      --panel: rgba(12, 18, 34, 0.88);
+      --accent: #5ef0ff;
+      --text: #f4f7ff;
+      --muted: #a3aecb;
+      --home: #4dd0ff;
+      --away: #ff6f7d;
     }
 
     * {
@@ -23,69 +22,136 @@
     body {
       margin: 0;
       min-height: 100vh;
+      background: radial-gradient(circle at top, #0d1534 0%, #04060d 60%);
+      color: var(--text);
+      font-family: "Inter", system-ui, -apple-system, Segoe UI, sans-serif;
       display: flex;
       align-items: center;
       justify-content: center;
-      background:
-        radial-gradient(circle at top, rgba(55, 64, 105, 0.8), rgba(6, 8, 20, 0.92)),
-        linear-gradient(160deg, #05060e, #090c1b 60%, #040508);
-      color: var(--text);
-      font-family: "Inter", system-ui, -apple-system, Segoe UI, sans-serif;
       padding: 16px;
     }
 
-    .shootout-shell {
-      width: min(96vw, 560px);
-      background: color-mix(in oklab, var(--panel), black 18%);
-      border-radius: 18px;
-      border: 1px solid #2d3561;
-      box-shadow: 0 18px 42px rgba(0, 0, 0, 0.55);
+    #game-wrapper {
+      position: relative;
+      width: min(96vw, 1100px);
+    }
+
+    #game-container {
+      width: 100%;
+    }
+
+    canvas {
+      width: 100%;
+      height: auto;
+      border-radius: 20px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      box-shadow: 0 16px 42px rgba(0, 0, 0, 0.45);
+      display: block;
+    }
+
+    #ui {
+      position: absolute;
+      inset: 0;
       display: flex;
       flex-direction: column;
-      gap: 14px;
-      padding: 18px;
+      justify-content: space-between;
+      pointer-events: none;
+      padding: 16px;
     }
 
-    .top {
+    .scoreboard {
       display: flex;
       justify-content: space-between;
-      align-items: flex-start;
+      align-items: center;
       gap: 12px;
+      background: var(--panel);
+      border-radius: 16px;
+      padding: 10px 16px;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      pointer-events: auto;
     }
 
-    .eyebrow {
-      margin: 0;
-      font-size: 0.7rem;
-      letter-spacing: 0.18em;
+    .team {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      font-weight: 600;
+    }
+
+    .team-label {
+      font-size: 0.65rem;
+      letter-spacing: 0.2em;
       text-transform: uppercase;
-      color: var(--accent);
-      font-weight: 700;
-    }
-
-    h1 {
-      margin: 6px 0 4px;
-      font-size: 1.6rem;
-    }
-
-    .sub {
-      margin: 0;
-      font-size: 0.9rem;
       color: var(--muted);
     }
 
-    button {
-      border: 1px solid #39457a;
-      border-radius: 12px;
-      background: linear-gradient(180deg, #202a56, #121831);
-      color: var(--text);
-      font-weight: 700;
-      cursor: pointer;
-      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    .team-name {
+      font-size: 1rem;
     }
 
-    button:hover:not(:disabled) {
-      transform: translateY(-1px);
-      box-shadow: 0 6px 14px rgba(0, 0, 0, 0.35);
+    .score {
+      font-size: 1.6rem;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .score span {
+      min-width: 24px;
+      text-align: center;
+    }
+
+    .hud {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      background: var(--panel);
+      border-radius: 16px;
+      padding: 12px 16px;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      pointer-events: auto;
+    }
+
+    .selectors {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .select-group {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      min-width: 150px;
+    }
+
+    label {
+      font-size: 0.7rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    select {
+      background: rgba(7, 11, 24, 0.95);
+      color: var(--text);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 10px;
+      padding: 6px 10px;
+      font-weight: 600;
+    }
+
+    button {
+      border: none;
+      border-radius: 12px;
+      padding: 10px 16px;
+      font-weight: 700;
+      background: linear-gradient(135deg, #4dd0ff, #5ef0ff);
+      color: #02131b;
+      cursor: pointer;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
     }
 
     button:disabled {
@@ -93,411 +159,853 @@
       cursor: not-allowed;
     }
 
-    .small-btn {
-      padding: 8px 12px;
-      font-size: 0.8rem;
+    button:not(:disabled):hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
     }
 
-    .opponent-card {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      padding: 12px 14px;
-      background: #10162c;
-      border-radius: 14px;
-      border: 1px solid #2c3560;
-    }
-
-    .opponent-card h2 {
-      margin: 6px 0 4px;
-      font-size: 1.2rem;
-    }
-
-    .label {
-      font-size: 0.7rem;
-      text-transform: uppercase;
-      letter-spacing: 0.1em;
-      color: var(--muted);
-    }
-
-    .opponent-team {
-      margin: 0;
-      color: #d2d8f4;
-      font-size: 0.9rem;
-    }
-
-    .opponent-logo {
-      width: 56px;
-      height: 56px;
-      border-radius: 50%;
-      background: #1d2444;
-      display: grid;
-      place-items: center;
-      font-size: 2.2rem;
-    }
-
-    .game-field {
-      position: relative;
-      width: 100%;
-      aspect-ratio: 4 / 5;
-      background: linear-gradient(180deg, var(--pitch), var(--pitch-dark));
-      border-radius: 16px;
-      border: 1px solid #2c3560;
-      overflow: hidden;
-      box-shadow: inset 0 0 24px rgba(0, 0, 0, 0.4);
-    }
-
-    .game-field::before {
-      content: "";
-      position: absolute;
-      inset: 0;
-      background: repeating-linear-gradient(
-        90deg,
-        rgba(255, 255, 255, 0.08) 0,
-        rgba(255, 255, 255, 0.08) 2px,
-        transparent 2px,
-        transparent 24px
-      );
-      opacity: 0.35;
-    }
-
-    .goal-frame {
-      position: absolute;
-      top: 6%;
-      left: 10%;
-      width: 80%;
-      height: 30%;
-      border: 3px solid rgba(255, 255, 255, 0.9);
-      border-bottom: none;
-      border-radius: 12px 12px 0 0;
-      box-shadow: 0 0 16px rgba(255, 255, 255, 0.25);
-    }
-
-    .goal-frame::after {
-      content: "";
-      position: absolute;
-      inset: 10% 12% 0 12%;
-      border: 1px dashed rgba(255, 255, 255, 0.35);
-      border-bottom: none;
-    }
-
-    .goalie,
-    .ball {
+    .popup {
       position: absolute;
       left: 50%;
-      transform: translate(-50%, 0);
-      transition: transform 0.65s ease;
-      z-index: 2;
-    }
-
-    .goalie {
-      bottom: 42%;
-      font-size: 3rem;
-    }
-
-    .ball {
-      bottom: 16%;
-      font-size: 2.4rem;
-    }
-
-    .ball.shot-left {
-      transform: translate(-180%, -220%);
-    }
-
-    .ball.shot-center {
-      transform: translate(-50%, -235%);
-    }
-
-    .ball.shot-right {
-      transform: translate(80%, -220%);
-    }
-
-    .goalie.dive-left {
-      transform: translate(-170%, -15%);
-    }
-
-    .goalie.dive-center {
-      transform: translate(-50%, -25%) scale(1.05);
-    }
-
-    .goalie.dive-right {
-      transform: translate(70%, -15%);
-    }
-
-    .status-panel {
-      min-height: 72px;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(8, 12, 24, 0.95);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 16px;
+      padding: 16px 20px;
       text-align: center;
-      display: grid;
-      gap: 4px;
+      pointer-events: auto;
+      max-width: 280px;
+      box-shadow: 0 12px 24px rgba(0, 0, 0, 0.4);
     }
 
-    .status-text {
+    .popup.hidden {
+      display: none;
+    }
+
+    .popup p {
       margin: 0;
-      color: var(--muted);
-      font-size: 0.95rem;
+      color: var(--text);
+      font-weight: 600;
     }
 
-    .result-text {
-      margin: 0;
-      font-size: 1.2rem;
-      font-weight: 800;
-    }
-
-    .result-text.goal {
+    .event-log {
+      position: absolute;
+      left: 50%;
+      top: 78px;
+      transform: translateX(-50%);
+      background: rgba(10, 16, 30, 0.85);
+      border-radius: 999px;
+      padding: 6px 16px;
+      font-size: 0.8rem;
       color: var(--accent);
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.2s ease;
     }
 
-    .result-text.save {
-      color: var(--danger);
+    .event-log.show {
+      opacity: 1;
     }
 
-    .cpu-text {
-      margin: 0;
-      color: #d6dcfa;
-      font-size: 0.9rem;
-    }
-
-    .controls {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 10px;
-    }
-
-    .direction-btn {
-      padding: 14px 10px;
-      font-size: 1rem;
-      border-radius: 14px;
-    }
-
-    .primary-btn {
-      padding: 14px;
-      font-size: 1rem;
-      border-radius: 14px;
-      background: linear-gradient(135deg, #4df5c5, #44a3ff);
-      color: #04131b;
-      border: none;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-    }
-
-    @media (prefers-reduced-motion: reduce) {
-      .goalie,
-      .ball,
-      button {
-        transition: none !important;
+    @media (max-width: 720px) {
+      .hud {
+        flex-direction: column;
+        align-items: stretch;
       }
     }
   </style>
 </head>
 <body>
-  <main class="shootout-shell">
-    <header class="top">
-      <div>
-        <p class="eyebrow">Ultimate Football Game</p>
-        <h1>Penalty Shootout</h1>
-        <p class="sub">Pick a direction and beat the keeper.</p>
+  <div id="game-wrapper">
+    <div id="game-container"></div>
+    <div id="ui">
+      <div class="scoreboard">
+        <div class="team">
+          <span class="team-label">Home</span>
+          <span id="homeTeamName" class="team-name">Loading...</span>
+        </div>
+        <div class="score">
+          <span id="homeScore">0</span>
+          <span>-</span>
+          <span id="awayScore">0</span>
+        </div>
+        <div class="team" style="text-align:right">
+          <span class="team-label">Away</span>
+          <span id="awayTeamName" class="team-name">Loading...</span>
+        </div>
       </div>
-      <button id="newKeeperBtn" class="small-btn" type="button">New Keeper</button>
-    </header>
-
-    <section class="opponent-card" aria-live="polite">
-      <div>
-        <span class="label">Opponent Goalkeeper</span>
-        <h2 id="keeperName">Loading...</h2>
-        <p id="keeperTeam" class="opponent-team">Fetching team...</p>
+      <div class="hud">
+        <div class="selectors">
+          <div class="select-group">
+            <label for="homeSelect">Home Team</label>
+            <select id="homeSelect"></select>
+          </div>
+          <div class="select-group">
+            <label for="awaySelect">Away Team</label>
+            <select id="awaySelect"></select>
+          </div>
+        </div>
+        <button id="subButton" type="button" disabled>Substitute</button>
       </div>
-      <div class="opponent-logo" aria-hidden="true">🧤</div>
-    </section>
-
-    <section id="gameField" class="game-field" role="img" aria-label="Penalty area">
-      <div class="goal-frame" aria-hidden="true"></div>
-      <div id="goalie" class="goalie" aria-hidden="true">🧤</div>
-      <div id="ball" class="ball" aria-hidden="true">⚽</div>
-    </section>
-
-    <div class="status-panel">
-      <p id="statusText" class="status-text">Loading player data…</p>
-      <p id="resultText" class="result-text" aria-live="polite"></p>
-      <p id="cpuText" class="cpu-text"></p>
+      <div id="subPopup" class="popup hidden">
+        <p id="subText">Substitution required.</p>
+      </div>
+      <div id="eventLog" class="event-log"></div>
     </div>
+  </div>
 
-    <div class="controls" role="group" aria-label="Choose shooting direction">
-      <button class="direction-btn" data-direction="Left" type="button">Left</button>
-      <button class="direction-btn" data-direction="Center" type="button">Center</button>
-      <button class="direction-btn" data-direction="Right" type="button">Right</button>
-    </div>
-
-    <button id="startBtn" class="primary-btn" type="button">Start Shootout</button>
-  </main>
-
+  <script src="https://cdn.jsdelivr.net/npm/phaser@3.80.1/dist/phaser.min.js"></script>
   <script>
     (() => {
       'use strict';
 
-      const API_URL = 'https://www.thesportsdb.com/api/v1/json/3/searchplayers.php?p=Messi';
-      const directions = ['Left', 'Center', 'Right'];
+      const API_URL = 'https://www.thesportsdb.com/api/v1/json/3/search_all_teams.php?l=English%20Premier%20League';
 
-      const keeperNameEl = document.getElementById('keeperName');
-      const keeperTeamEl = document.getElementById('keeperTeam');
-      const statusText = document.getElementById('statusText');
-      const resultText = document.getElementById('resultText');
-      const cpuText = document.getElementById('cpuText');
-      const startBtn = document.getElementById('startBtn');
-      const newKeeperBtn = document.getElementById('newKeeperBtn');
-      const ball = document.getElementById('ball');
-      const goalie = document.getElementById('goalie');
-      const directionButtons = Array.from(document.querySelectorAll('.direction-btn'));
-
-      const gameState = {
-        loading: true,
-        menu: false,
-        playing: false,
-        result: false,
-        opponentList: [],
-        opponent: null,
-        playerChoice: null,
-        cpuChoice: null,
-        outcome: '',
-        notice: '',
+      const ui = {
+        homeName: document.getElementById('homeTeamName'),
+        awayName: document.getElementById('awayTeamName'),
+        homeScore: document.getElementById('homeScore'),
+        awayScore: document.getElementById('awayScore'),
+        homeSelect: document.getElementById('homeSelect'),
+        awaySelect: document.getElementById('awaySelect'),
+        subButton: document.getElementById('subButton'),
+        subPopup: document.getElementById('subPopup'),
+        subText: document.getElementById('subText'),
+        eventLog: document.getElementById('eventLog'),
       };
 
-      const shotClasses = ['shot-left', 'shot-center', 'shot-right'];
-      const diveClasses = ['dive-left', 'dive-center', 'dive-right'];
+      const state = {
+        teams: [],
+        namePool: [],
+        homeIndex: 0,
+        awayIndex: 1,
+        homeTeam: null,
+        awayTeam: null,
+        scores: { home: 0, away: 0 },
+        rosters: {
+          home: { starters: [], bench: [] },
+          away: { starters: [], bench: [] },
+        },
+        pendingSub: null,
+        scene: null,
+        eventTimer: null,
+      };
 
-      function setState(next) {
-        gameState.loading = next === 'loading';
-        gameState.menu = next === 'menu';
-        gameState.playing = next === 'playing';
-        gameState.result = next === 'result';
-        updateUI();
-      }
+      const fallbackTeams = [
+        { strTeam: 'North XI' },
+        { strTeam: 'South XI' },
+        { strTeam: 'East XI' },
+        { strTeam: 'West XI' },
+      ];
 
-      function updateUI() {
-        directionButtons.forEach((btn) => {
-          btn.disabled = !gameState.playing;
+      const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
+
+      const showEvent = (message) => {
+        ui.eventLog.textContent = message;
+        ui.eventLog.classList.add('show');
+        clearTimeout(state.eventTimer);
+        state.eventTimer = setTimeout(() => {
+          ui.eventLog.classList.remove('show');
+        }, 2200);
+      };
+
+      const updateScoreboard = () => {
+        ui.homeName.textContent = state.homeTeam?.strTeam || 'Home XI';
+        ui.awayName.textContent = state.awayTeam?.strTeam || 'Away XI';
+        ui.homeScore.textContent = state.scores.home;
+        ui.awayScore.textContent = state.scores.away;
+      };
+
+      const buildNamePool = (teams) => {
+        const names = [];
+        teams.forEach((team) => {
+          [
+            team?.strTeam,
+            team?.strAlternate,
+            team?.strTeamShort,
+            team?.strManager,
+            team?.strStadium,
+          ].forEach((entry) => {
+            const cleaned = String(entry || '').trim();
+            if (cleaned && !names.includes(cleaned)) {
+              names.push(cleaned);
+            }
+          });
         });
+        return names;
+      };
 
-        newKeeperBtn.disabled = gameState.loading || gameState.playing || !gameState.opponentList.length;
+      const createRoster = (pool, offset) => {
+        const roster = Array.from({ length: 16 }, (_, index) => {
+          const name = pool.length ? pool[(offset + index) % pool.length] : `Player ${index + 1}`;
+          return { name, number: index + 1 };
+        });
+        return {
+          starters: roster.slice(0, 11),
+          bench: roster.slice(11),
+        };
+      };
 
-        if (gameState.loading) {
-          statusText.textContent = 'Loading player data…';
-          startBtn.hidden = true;
-        } else if (gameState.menu) {
-          statusText.textContent = gameState.notice || 'Ready to shoot? Choose a direction.';
-          startBtn.hidden = false;
-          startBtn.textContent = 'Start Shootout';
-        } else if (gameState.playing) {
-          statusText.textContent = 'Pick Left, Center, or Right to shoot.';
-          startBtn.hidden = true;
-        } else if (gameState.result) {
-          statusText.textContent = 'Result in!';
-          startBtn.hidden = false;
-          startBtn.textContent = 'Shoot Again';
+      const applyTeamSelection = () => {
+        state.homeTeam = state.teams[state.homeIndex] || fallbackTeams[0];
+        state.awayTeam = state.teams[state.awayIndex] || fallbackTeams[1];
+        state.namePool = buildNamePool(state.teams.length ? state.teams : fallbackTeams);
+        state.rosters.home = createRoster(state.namePool, state.homeIndex * 6);
+        state.rosters.away = createRoster(state.namePool, state.awayIndex * 6 + 8);
+        updateScoreboard();
+        if (state.scene) {
+          state.scene.resetMatch();
         }
+      };
 
-        if (gameState.result) {
-          resultText.textContent = gameState.outcome;
-          resultText.classList.toggle('goal', gameState.outcome === 'GOAL!');
-          resultText.classList.toggle('save', gameState.outcome === 'SAVED!');
-          cpuText.textContent = `Goalie dives ${gameState.cpuChoice}.`;
-        } else {
-          resultText.textContent = '';
-          resultText.classList.remove('goal', 'save');
-          cpuText.textContent = '';
-        }
-      }
+      const populateTeamSelects = () => {
+        const options = state.teams.map((team, index) => {
+          const option = document.createElement('option');
+          option.value = String(index);
+          option.textContent = team.strTeam || `Team ${index + 1}`;
+          return option;
+        });
+        [ui.homeSelect, ui.awaySelect].forEach((select) => {
+          select.innerHTML = '';
+          options.forEach((option) => select.appendChild(option.cloneNode(true)));
+        });
+        ui.homeSelect.value = String(state.homeIndex);
+        ui.awaySelect.value = String(state.awayIndex);
+      };
 
-      function updateOpponent(player) {
-        const name = player?.strPlayer?.trim() || 'Mystery Keeper';
-        const team = player?.strTeam?.trim() || 'Unknown Club';
-        keeperNameEl.textContent = name;
-        keeperTeamEl.textContent = `Team: ${team}`;
-        gameState.opponent = player || null;
-      }
-
-      function pickOpponent() {
-        const players = gameState.opponentList;
-        if (!players.length) {
-          updateOpponent(null);
+      const queueSubstitution = (player) => {
+        if (state.pendingSub) {
           return;
         }
+        state.pendingSub = player;
+        ui.subText.textContent = `Substitution needed for ${player.displayName}.`;
+        ui.subPopup.classList.remove('hidden');
+        ui.subButton.disabled = false;
+      };
 
-        const keepers = players.filter((player) =>
-          String(player?.strPosition || '').toLowerCase().includes('goalkeeper')
-        );
-        const pool = keepers.length ? keepers : players;
-        const selection = pool[Math.floor(Math.random() * pool.length)];
-        updateOpponent(selection);
+      const clearSubstitution = () => {
+        state.pendingSub = null;
+        ui.subPopup.classList.add('hidden');
+        ui.subButton.disabled = true;
+      };
+
+      ui.subButton.addEventListener('click', () => {
+        const player = state.pendingSub;
+        if (!player) {
+          return;
+        }
+        const bench = state.rosters[player.teamKey]?.bench || [];
+        if (!bench.length) {
+          showEvent('No substitutes left.');
+          clearSubstitution();
+          return;
+        }
+        const replacement = bench.shift();
+        player.replaceWith(replacement);
+        showEvent(`${player.teamKey === 'home' ? 'Home' : 'Away'} substitution made.`);
+        clearSubstitution();
+      });
+
+      ui.homeSelect.addEventListener('change', (event) => {
+        state.homeIndex = Number(event.target.value);
+        if (state.homeIndex === state.awayIndex) {
+          state.awayIndex = (state.homeIndex + 1) % state.teams.length;
+          ui.awaySelect.value = String(state.awayIndex);
+        }
+        applyTeamSelection();
+      });
+
+      ui.awaySelect.addEventListener('change', (event) => {
+        state.awayIndex = Number(event.target.value);
+        if (state.awayIndex === state.homeIndex) {
+          state.homeIndex = (state.awayIndex + 1) % state.teams.length;
+          ui.homeSelect.value = String(state.homeIndex);
+        }
+        applyTeamSelection();
+      });
+
+      class Player {
+        constructor(scene, { teamKey, number, name, color, position }) {
+          this.scene = scene;
+          this.teamKey = teamKey;
+          this.number = number;
+          this.displayName = name;
+          this.color = color;
+          this.homePosition = { ...position };
+          this.stamina = 60 + Math.random() * 40;
+          this.state = 'ZONAL_DEFENSE';
+          this.hasBall = false;
+          this.subAlerted = false;
+          this.lastMove = new Phaser.Math.Vector2(1, 0);
+
+          this.container = scene.add.container(position.x, position.y);
+          this.ring = scene.add.circle(0, 0, 18, 0x000000, 0).setStrokeStyle(2, 0xfff59d);
+          this.ring.setVisible(false);
+          this.circle = scene.add.circle(0, 0, 14, color);
+          this.text = scene.add.text(0, 0, String(number), {
+            fontFamily: 'Inter, system-ui, sans-serif',
+            fontSize: '12px',
+            color: '#06121d',
+            fontStyle: '700',
+          }).setOrigin(0.5);
+          this.container.add([this.ring, this.circle, this.text]);
+        }
+
+        setControlled(isControlled) {
+          this.ring.setVisible(isControlled);
+        }
+
+        replaceWith(replacement) {
+          this.displayName = replacement.name;
+          this.number = replacement.number;
+          this.text.setText(String(replacement.number));
+          this.stamina = 100;
+          this.subAlerted = false;
+        }
+
+        updateStamina(dt) {
+          const drain = dt * (0.35 + Math.random() * 0.65);
+          this.stamina = Math.max(0, this.stamina - drain);
+          if (this.stamina < 20 && !this.subAlerted) {
+            this.subAlerted = true;
+            this.scene.queueSubstitution(this);
+          }
+        }
+
+        moveToward(target, speed, dt, field) {
+          const dx = target.x - this.container.x;
+          const dy = target.y - this.container.y;
+          const distance = Math.hypot(dx, dy);
+          if (distance > 1) {
+            const vx = (dx / distance) * speed;
+            const vy = (dy / distance) * speed;
+            this.container.x = clamp(this.container.x + vx * dt, field.left, field.right);
+            this.container.y = clamp(this.container.y + vy * dt, field.top, field.bottom);
+            this.lastMove.set(vx, vy).normalize();
+          }
+        }
+
+        updateAI(context) {
+          if (this.hasBall) {
+            this.state = 'DRIBBLING';
+          } else if (context.possession === this.teamKey) {
+            this.state = 'OFFENSE';
+          } else {
+            this.state = 'ZONAL_DEFENSE';
+          }
+
+          if (this.state === 'ZONAL_DEFENSE') {
+            this.moveToward(this.homePosition, 80, context.dt, context.field);
+          } else if (this.state === 'OFFENSE') {
+            this.moveToward(context.ballPosition, 110, context.dt, context.field);
+          } else if (this.state === 'DRIBBLING') {
+            this.moveToward(context.attackTarget, 130, context.dt, context.field);
+          }
+        }
+
+        update(context) {
+          this.updateStamina(context.dt);
+          if (context.isControlled && (context.manualVector.lengthSq() > 0 || context.pointerTarget)) {
+            if (context.manualVector.lengthSq() > 0) {
+              const manualDirection = context.manualVector.clone().normalize();
+              const target = {
+                x: this.container.x + manualDirection.x * 120,
+                y: this.container.y + manualDirection.y * 120,
+              };
+              this.moveToward(target, 160, context.dt, context.field);
+            } else if (context.pointerTarget) {
+              this.moveToward(context.pointerTarget, 160, context.dt, context.field);
+            }
+            return;
+          }
+          this.updateAI(context);
+        }
       }
 
-      async function loadOpponents() {
-        setState('loading');
-        gameState.notice = '';
+      class FootballScene extends Phaser.Scene {
+        constructor() {
+          super({ key: 'football' });
+        }
 
+        create() {
+          state.scene = this;
+          this.field = {
+            left: 40,
+            top: 40,
+            right: 920,
+            bottom: 560,
+          };
+          this.field.width = this.field.right - this.field.left;
+          this.field.height = this.field.bottom - this.field.top;
+          this.field.centerX = this.field.left + this.field.width / 2;
+          this.field.centerY = this.field.top + this.field.height / 2;
+
+          this.createCrowd();
+          this.drawPitch();
+          this.createAudio();
+          this.setupInput();
+          this.resetMatch();
+        }
+
+        createCrowd() {
+          const canvasTexture = this.textures.createCanvas('crowd', 32, 32);
+          const ctx = canvasTexture.getContext();
+          for (let x = 0; x < 32; x += 4) {
+            for (let y = 0; y < 32; y += 4) {
+              ctx.fillStyle = Math.random() > 0.5 ? '#0d1f35' : '#1b2b4d';
+              ctx.fillRect(x, y, 3, 3);
+            }
+          }
+          canvasTexture.refresh();
+          this.crowd = this.add.tileSprite(0, 0, 960, 600, 'crowd').setOrigin(0).setAlpha(0.35);
+        }
+
+        drawPitch() {
+          const graphics = this.add.graphics();
+          graphics.fillStyle(0x1a7f3c, 1);
+          graphics.fillRect(this.field.left, this.field.top, this.field.width, this.field.height);
+          graphics.fillStyle(0x176b34, 0.6);
+          graphics.fillRect(this.field.left, this.field.top, this.field.width, this.field.height / 2);
+          graphics.lineStyle(2, 0xffffff, 0.7);
+          graphics.strokeRect(this.field.left, this.field.top, this.field.width, this.field.height);
+          graphics.lineBetween(this.field.centerX, this.field.top, this.field.centerX, this.field.bottom);
+          graphics.strokeCircle(this.field.centerX, this.field.centerY, 60);
+
+          const boxWidth = 120;
+          const boxHeight = 200;
+          graphics.strokeRect(this.field.left, this.field.centerY - boxHeight / 2, boxWidth, boxHeight);
+          graphics.strokeRect(
+            this.field.right - boxWidth,
+            this.field.centerY - boxHeight / 2,
+            boxWidth,
+            boxHeight
+          );
+        }
+
+        createAudio() {
+          this.audioReady = false;
+          const resumeAudio = () => {
+            if (this.audioReady) {
+              return;
+            }
+            const context = this.sound.context;
+            if (!context) {
+              return;
+            }
+            context.resume();
+            this.buildCrowdLoop(context);
+            this.audioReady = true;
+          };
+          this.input.once('pointerdown', resumeAudio);
+          this.input.keyboard.once('keydown', resumeAudio);
+        }
+
+        buildCrowdLoop(context) {
+          const gain = context.createGain();
+          gain.gain.value = 0.025;
+
+          const osc = context.createOscillator();
+          osc.type = 'sawtooth';
+          osc.frequency.value = 180;
+
+          const lfo = context.createOscillator();
+          lfo.frequency.value = 0.3;
+          const lfoGain = context.createGain();
+          lfoGain.gain.value = 40;
+
+          lfo.connect(lfoGain).connect(osc.frequency);
+          osc.connect(gain).connect(context.destination);
+          osc.start();
+          lfo.start();
+
+          this.crowdOsc = osc;
+          this.crowdGain = gain;
+        }
+
+        playWhistle() {
+          const context = this.sound.context;
+          if (!context) {
+            return;
+          }
+          const osc = context.createOscillator();
+          const gain = context.createGain();
+          osc.type = 'square';
+          osc.frequency.setValueAtTime(1200, context.currentTime);
+          gain.gain.setValueAtTime(0.0001, context.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.15, context.currentTime + 0.01);
+          gain.gain.exponentialRampToValueAtTime(0.0001, context.currentTime + 0.2);
+          osc.connect(gain).connect(context.destination);
+          osc.start();
+          osc.stop(context.currentTime + 0.25);
+        }
+
+        setupInput() {
+          this.keys = this.input.keyboard.addKeys('W,A,S,D');
+          this.pointerTarget = null;
+          this.input.on('pointerdown', (pointer) => {
+            const selected = this.findPlayerAt(pointer.x, pointer.y, this.homePlayers);
+            if (selected) {
+              this.setControlledPlayer(selected);
+            } else {
+              this.pointerTarget = { x: pointer.x, y: pointer.y };
+            }
+          });
+          this.input.on('pointermove', (pointer) => {
+            if (pointer.isDown) {
+              this.pointerTarget = { x: pointer.x, y: pointer.y };
+            }
+          });
+          this.input.on('pointerup', () => {
+            this.pointerTarget = null;
+          });
+        }
+
+        resetMatch() {
+          this.clearPlayers();
+          this.createBall();
+          this.createTeams();
+          this.createOfficials();
+          this.resetPositions();
+          updateScoreboard();
+          showEvent('Kick-off!');
+        }
+
+        clearPlayers() {
+          if (this.players) {
+            this.players.forEach((player) => player.container.destroy());
+          }
+          if (this.referee) {
+            this.referee.destroy();
+          }
+          if (this.coaches) {
+            this.coaches.forEach((coach) => coach.destroy());
+          }
+          this.players = [];
+          this.homePlayers = [];
+          this.awayPlayers = [];
+        }
+
+        createBall() {
+          if (this.ball) {
+            this.ball.sprite.destroy();
+          }
+          this.ball = {
+            sprite: this.add.circle(this.field.centerX, this.field.centerY, 6, 0xffffff),
+            velocity: new Phaser.Math.Vector2(0, 0),
+            owner: null,
+          };
+        }
+
+        createTeams() {
+          const homeFormation = this.getFormationPositions('home');
+          const awayFormation = this.getFormationPositions('away');
+
+          state.rosters.home.starters.forEach((player, index) => {
+            const position = homeFormation[index];
+            const homePlayer = new Player(this, {
+              teamKey: 'home',
+              number: player.number,
+              name: player.name,
+              color: 0x4dd0ff,
+              position,
+            });
+            this.homePlayers.push(homePlayer);
+          });
+
+          state.rosters.away.starters.forEach((player, index) => {
+            const position = awayFormation[index];
+            const awayPlayer = new Player(this, {
+              teamKey: 'away',
+              number: player.number,
+              name: player.name,
+              color: 0xff6f7d,
+              position,
+            });
+            this.awayPlayers.push(awayPlayer);
+          });
+
+          this.players = [...this.homePlayers, ...this.awayPlayers];
+          this.setControlledPlayer(this.homePlayers[0]);
+        }
+
+        createOfficials() {
+          this.referee = this.add.circle(this.field.centerX, this.field.centerY - 40, 8, 0xe0e0e0);
+          this.referee.setStrokeStyle(2, 0x222222);
+
+          const coachLeft = this.add.rectangle(this.field.left - 20, this.field.centerY, 10, 30, 0xffd166);
+          const coachRight = this.add.rectangle(this.field.right + 20, this.field.centerY, 10, 30, 0xffd166);
+          this.coaches = [coachLeft, coachRight];
+          this.coaches.forEach((coach) => {
+            this.tweens.add({
+              targets: coach,
+              y: coach.y - 20,
+              duration: 600,
+              yoyo: true,
+              repeat: -1,
+              ease: 'Sine.easeInOut',
+            });
+          });
+        }
+
+        getFormationPositions(side) {
+          const formation = [
+            { x: 0.08, y: 0.5 },
+            { x: 0.22, y: 0.2 },
+            { x: 0.22, y: 0.4 },
+            { x: 0.22, y: 0.6 },
+            { x: 0.22, y: 0.8 },
+            { x: 0.42, y: 0.2 },
+            { x: 0.42, y: 0.4 },
+            { x: 0.42, y: 0.6 },
+            { x: 0.42, y: 0.8 },
+            { x: 0.62, y: 0.35 },
+            { x: 0.62, y: 0.65 },
+          ];
+          return formation.map((pos) => {
+            const normalizedX = side === 'home' ? pos.x : 1 - pos.x;
+            return {
+              x: this.field.left + normalizedX * this.field.width,
+              y: this.field.top + pos.y * this.field.height,
+            };
+          });
+        }
+
+        resetPositions() {
+          this.homePlayers.forEach((player, index) => {
+            const target = this.getFormationPositions('home')[index];
+            player.container.setPosition(target.x, target.y);
+            player.homePosition = { ...target };
+            player.hasBall = false;
+          });
+          this.awayPlayers.forEach((player, index) => {
+            const target = this.getFormationPositions('away')[index];
+            player.container.setPosition(target.x, target.y);
+            player.homePosition = { ...target };
+            player.hasBall = false;
+          });
+          this.ball.owner = null;
+          this.ball.velocity.set(0, 0);
+          this.ball.sprite.setPosition(this.field.centerX, this.field.centerY);
+        }
+
+        setControlledPlayer(player) {
+          if (this.controlledPlayer) {
+            this.controlledPlayer.setControlled(false);
+          }
+          this.controlledPlayer = player;
+          if (player) {
+            player.setControlled(true);
+          }
+        }
+
+        findPlayerAt(x, y, players) {
+          return players.find((player) => {
+            const distance = Phaser.Math.Distance.Between(x, y, player.container.x, player.container.y);
+            return distance < 20;
+          });
+        }
+
+        queueSubstitution(player) {
+          queueSubstitution(player);
+        }
+
+        update(time, delta) {
+          const dt = delta / 1000;
+          if (!dt) {
+            return;
+          }
+
+          const manualVector = new Phaser.Math.Vector2(
+            (this.keys.D.isDown ? 1 : 0) - (this.keys.A.isDown ? 1 : 0),
+            (this.keys.S.isDown ? 1 : 0) - (this.keys.W.isDown ? 1 : 0)
+          );
+
+          const possession = this.ball.owner?.teamKey || null;
+          const attackTargets = {
+            home: { x: this.field.right - 20, y: this.field.centerY },
+            away: { x: this.field.left + 20, y: this.field.centerY },
+          };
+
+          this.players.forEach((player) => {
+            player.update({
+              dt,
+              field: this.field,
+              ballPosition: { x: this.ball.sprite.x, y: this.ball.sprite.y },
+              possession,
+              attackTarget: attackTargets[player.teamKey],
+              isControlled: player === this.controlledPlayer,
+              manualVector,
+              pointerTarget: player === this.controlledPlayer ? this.pointerTarget : null,
+            });
+          });
+
+          this.updateBall(dt);
+          this.updateReferee(dt);
+          this.handlePossession();
+          this.checkGoals();
+          this.checkCrowdPulse();
+        }
+
+        updateBall(dt) {
+          if (this.ball.owner) {
+            const carrier = this.ball.owner;
+            const offset = carrier.lastMove.clone().scale(12);
+            this.ball.sprite.setPosition(carrier.container.x + offset.x, carrier.container.y + offset.y);
+            if (Math.random() < 0.002) {
+              this.releaseBall(carrier.lastMove.clone().scale(220));
+            }
+          } else {
+            this.ball.sprite.x += this.ball.velocity.x * dt;
+            this.ball.sprite.y += this.ball.velocity.y * dt;
+            this.ball.velocity.scale(0.97);
+          }
+
+          this.ball.sprite.x = clamp(this.ball.sprite.x, this.field.left, this.field.right);
+          this.ball.sprite.y = clamp(this.ball.sprite.y, this.field.top, this.field.bottom);
+        }
+
+        releaseBall(velocity) {
+          if (this.ball.owner) {
+            this.ball.owner.hasBall = false;
+          }
+          this.ball.owner = null;
+          this.ball.velocity = velocity;
+        }
+
+        handlePossession() {
+          if (this.ball.owner) {
+            return;
+          }
+          const nearest = this.players.reduce((closest, player) => {
+            const distance = Phaser.Math.Distance.Between(
+              player.container.x,
+              player.container.y,
+              this.ball.sprite.x,
+              this.ball.sprite.y
+            );
+            if (distance < 18 && (!closest || distance < closest.distance)) {
+              return { player, distance };
+            }
+            return closest;
+          }, null);
+
+          if (nearest) {
+            this.ball.owner = nearest.player;
+            nearest.player.hasBall = true;
+          }
+        }
+
+        updateReferee(dt) {
+          const targetDistance = 50;
+          const dx = this.ball.sprite.x - this.referee.x;
+          const dy = this.ball.sprite.y - this.referee.y;
+          const distance = Math.hypot(dx, dy);
+          if (distance > targetDistance) {
+            const vx = (dx / distance) * 90;
+            const vy = (dy / distance) * 90;
+            this.referee.x += vx * dt;
+            this.referee.y += vy * dt;
+          } else if (distance < targetDistance - 10) {
+            const vx = (-dx / distance) * 70;
+            const vy = (-dy / distance) * 70;
+            this.referee.x += vx * dt;
+            this.referee.y += vy * dt;
+          }
+
+          const collision = this.players.some((player) => {
+            return Phaser.Math.Distance.Between(player.container.x, player.container.y, this.referee.x, this.referee.y) < 18;
+          });
+          if (collision && Math.random() < 0.02) {
+            this.playWhistle();
+            showEvent('Whistle! Foul called.');
+          }
+        }
+
+        checkGoals() {
+          const goalHeight = 140;
+          const inGoalY =
+            this.ball.sprite.y > this.field.centerY - goalHeight / 2 &&
+            this.ball.sprite.y < this.field.centerY + goalHeight / 2;
+
+          if (inGoalY && this.ball.sprite.x <= this.field.left + 6) {
+            state.scores.away += 1;
+            updateScoreboard();
+            showEvent('Away team scores!');
+            this.resetPositions();
+          } else if (inGoalY && this.ball.sprite.x >= this.field.right - 6) {
+            state.scores.home += 1;
+            updateScoreboard();
+            showEvent('Home team scores!');
+            this.resetPositions();
+          }
+        }
+
+        checkCrowdPulse() {
+          const boxWidth = 120;
+          const boxHeight = 200;
+          const leftBox =
+            this.ball.sprite.x < this.field.left + boxWidth &&
+            this.ball.sprite.y > this.field.centerY - boxHeight / 2 &&
+            this.ball.sprite.y < this.field.centerY + boxHeight / 2;
+          const rightBox =
+            this.ball.sprite.x > this.field.right - boxWidth &&
+            this.ball.sprite.y > this.field.centerY - boxHeight / 2 &&
+            this.ball.sprite.y < this.field.centerY + boxHeight / 2;
+          const inBox = leftBox || rightBox;
+          if (inBox && !this.crowdPulseActive) {
+            this.crowdPulseActive = true;
+            this.tweens.add({
+              targets: this.crowd,
+              alpha: 0.6,
+              duration: 180,
+              yoyo: true,
+              repeat: 2,
+              onComplete: () => {
+                this.crowdPulseActive = false;
+                this.crowd.setAlpha(0.35);
+              },
+            });
+          }
+        }
+      }
+
+      const fetchTeams = async () => {
         try {
           const response = await fetch(API_URL);
           if (!response.ok) {
-            throw new Error('Failed to load player data.');
+            throw new Error('Failed to fetch teams');
           }
           const data = await response.json();
-          const players = Array.isArray(data?.player) ? data.player : [];
-          gameState.opponentList = players;
-          pickOpponent();
-          setState('menu');
+          return Array.isArray(data?.teams) ? data.teams : [];
         } catch (error) {
           console.error(error);
-          gameState.opponentList = [];
-          updateOpponent(null);
-          gameState.notice = 'Unable to reach the API. Using a local keeper instead.';
-          setState('menu');
+          showEvent('Using offline teams.');
+          return [];
         }
-      }
+      };
 
-      function resetShot() {
-        ball.classList.remove(...shotClasses);
-        goalie.classList.remove(...diveClasses);
-      }
+      const startGame = () => {
+        const config = {
+          type: Phaser.AUTO,
+          width: 960,
+          height: 600,
+          parent: 'game-container',
+          backgroundColor: '#0b2a1c',
+          scene: [FootballScene],
+        };
+        new Phaser.Game(config);
+      };
 
-      function animateShot(playerChoice, cpuChoice) {
-        resetShot();
-        void ball.offsetWidth;
-        ball.classList.add(`shot-${playerChoice.toLowerCase()}`);
-        goalie.classList.add(`dive-${cpuChoice.toLowerCase()}`);
-      }
+      const init = async () => {
+        const teams = await fetchTeams();
+        state.teams = teams.length ? teams : fallbackTeams;
+        populateTeamSelects();
+        applyTeamSelection();
+        startGame();
+      };
 
-      function handleShot(direction) {
-        if (!gameState.playing) {
-          return;
-        }
-
-        const cpuChoice = directions[Math.floor(Math.random() * directions.length)];
-        gameState.playerChoice = direction;
-        gameState.cpuChoice = cpuChoice;
-        gameState.outcome = direction !== cpuChoice ? 'GOAL!' : 'SAVED!';
-        animateShot(direction, cpuChoice);
-        setState('result');
-      }
-
-      directionButtons.forEach((button) => {
-        button.addEventListener('click', () => {
-          handleShot(button.dataset.direction);
-        });
-      });
-
-      startBtn.addEventListener('click', () => {
-        resetShot();
-        gameState.outcome = '';
-        gameState.cpuChoice = null;
-        gameState.playerChoice = null;
-        setState('playing');
-      });
-
-      newKeeperBtn.addEventListener('click', () => {
-        pickOpponent();
-      });
-
-      loadOpponents();
+      init();
     })();
   </script>
 </body>
