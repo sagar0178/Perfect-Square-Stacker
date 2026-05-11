@@ -117,7 +117,8 @@
     }
 
     @media (prefers-reduced-motion: reduce) {
-      * { animation: none !important; transition: none !important; }
+      body { transition: none !important; }
+      .game-area.shake { animation: none !important; }
     }
   </style>
 </head>
@@ -155,12 +156,14 @@
 
       const MAX_DELTA_SECONDS = 0.033;
 
+      const savedBest = parseInt(localStorage.getItem('pss-best') || '0', 10);
+
       const state = {
         running: false,
         animationId: 0,
         lastTime: 0,
         score: 0,
-        best: Number(localStorage.getItem('pss-best') || 0),
+        best: Number.isFinite(savedBest) ? savedBest : 0,
         stack: [],
         current: null,
         dimensions: { width: 0, height: 0 },
@@ -346,8 +349,7 @@
         dropCurrentBlock();
       };
 
-      gameArea.addEventListener('click', activateDrop);
-      gameArea.addEventListener('touchstart', activateDrop, { passive: true });
+      gameArea.addEventListener('pointerdown', activateDrop);
       gameArea.addEventListener('keydown', (event) => {
         if (event.key === 'Enter' || event.key === ' ') {
           event.preventDefault();
