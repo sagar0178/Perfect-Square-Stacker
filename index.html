@@ -155,15 +155,17 @@
       const startBtn = document.getElementById('startBtn');
 
       const MAX_DELTA_SECONDS = 0.033;
+      const MAX_BLOCK_SPEED = 360;
 
-      const savedBest = parseInt(localStorage.getItem('pss-best') || '0', 10);
+      const parsedBest = Number.parseInt(localStorage.getItem('pss-best') || '0', 10);
+      const safeBest = Number.isFinite(parsedBest) ? parsedBest : 0;
 
       const state = {
         running: false,
         animationId: 0,
         lastTime: 0,
         score: 0,
-        best: Number.isFinite(savedBest) ? savedBest : 0,
+        best: safeBest,
         stack: [],
         current: null,
         dimensions: { width: 0, height: 0 },
@@ -223,7 +225,7 @@
           x: 0,
           y,
           width,
-          speed: 180 + state.stack.length * 8,
+          speed: Math.min(180 + state.stack.length * 8, MAX_BLOCK_SPEED),
           dir: 1,
           el: null,
         };
