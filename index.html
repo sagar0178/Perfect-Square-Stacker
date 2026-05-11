@@ -231,8 +231,10 @@
       const MAX_BLOCK_SPEED = 360;
       const FEVER_STREAK = 3;
       const FEVER_DURATION = 4500;
-      const PARTICLE_RANGE = [10, 15];
+      const PARTICLE_COUNT_RANGE = [10, 15];
       const PALETTE = [200, 220, 245, 270, 295, 325, 350, 15, 45, 70];
+      const AUDIO_MASTER_GAIN = 0.08;
+      const HAPTIC_IMPACT = [200];
       const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
       const parsedBest = Number.parseInt(localStorage.getItem('pss-best') || '0', 10);
@@ -279,6 +281,10 @@
         messageEl.style.color = isError ? 'var(--danger)' : '#b7beff';
       }
 
+      function randomInt(min, max) {
+        return Math.floor(Math.random() * (max - min + 1)) + min;
+      }
+
       function updateBackground() {
         const hue = (220 + state.score * 9) % 360;
         document.documentElement.style.setProperty('--bg-hue', String(hue));
@@ -306,9 +312,7 @@
           return;
         }
 
-        const count = Math.floor(
-          Math.random() * (PARTICLE_RANGE[1] - PARTICLE_RANGE[0] + 1)
-        ) + PARTICLE_RANGE[0];
+        const count = randomInt(PARTICLE_COUNT_RANGE[0], PARTICLE_COUNT_RANGE[1]);
 
         for (let i = 0; i < count; i += 1) {
           const particle = document.createElement('div');
@@ -358,7 +362,7 @@
           }
           audioState.ctx = new AudioContext();
           audioState.master = audioState.ctx.createGain();
-          audioState.master.gain.value = 0.08;
+          audioState.master.gain.value = AUDIO_MASTER_GAIN;
           audioState.master.connect(audioState.ctx.destination);
         }
 
@@ -467,7 +471,7 @@
         const overlap = right - left;
 
         if (overlap <= 0) {
-          triggerHaptic([200]);
+          triggerHaptic(HAPTIC_IMPACT);
           playSound('miss');
           shakeScreen();
           endGame('Missed! Press Start to try again.');
@@ -496,12 +500,12 @@
         if (sliced) {
           state.perfectStreak = 0;
           shakeScreen();
-          triggerHaptic([200]);
+          triggerHaptic(HAPTIC_IMPACT);
           playSound('slice');
           setMessage('Sliced! Keep balancing.');
         } else {
           state.perfectStreak += 1;
-          triggerHaptic([200]);
+          triggerHaptic(HAPTIC_IMPACT);
           playSound('perfect');
           setMessage('Perfect drop!');
         }
@@ -664,13 +668,7 @@
       };
 
       function setState(nextState, options = {}) {
-        if (state.gameState === nextState) {
-          if (options.reset) {
-            const currentHandler = stateHandlers[state.gameState];
-            if (currentHandler && currentHandler.enter) {
-              currentHandler.enter(options);
-            }
-          }
+        if (state.gameState === nextState && !options.reset) {
           return;
         }
 
