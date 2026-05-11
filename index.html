@@ -261,13 +261,31 @@
       'use strict';
 
       const API_URL = 'https://www.thesportsdb.com/api/v1/json/3/search_all_teams.php?l=English%20Premier%20League';
-      const TEAM_OFFSET_MULTIPLIER = 6;
-      const AWAY_OFFSET_BONUS = 8;
+      const ROSTER_NAME_OFFSET_STEP = 6;
+      const AWAY_ROSTER_NAME_OFFSET = 8;
+      const STAMINA_START_MIN = 60;
+      const STAMINA_START_RANGE = 40;
       const STAMINA_DRAIN_BASE = 0.35;
       const STAMINA_DRAIN_VARIANCE = 0.65;
-      const PASS_PROBABILITY = 0.002;
+      const PASS_PROBABILITY_PER_SECOND = 0.12;
       const PASS_SPEED = 220;
-      const FOUL_CALL_PROBABILITY = 0.02;
+      const FOUL_CALL_PROBABILITY_PER_SECOND = 0.7;
+      const PLAYER_MANUAL_CONTROL_SPEED = 160;
+      const AI_ZONAL_DEFENSE_SPEED = 80;
+      const AI_OFFENSE_SPEED = 110;
+      const AI_DRIBBLING_SPEED = 130;
+      const BALL_CARRIER_OFFSET = 12;
+      const BALL_FRICTION_COEFFICIENT = 0.97;
+      const BALL_POSSESSION_RADIUS = 18;
+      const PLAYER_SELECTION_RADIUS = 20;
+      const REFEREE_FOLLOW_DISTANCE = 50;
+      const REFEREE_APPROACH_SPEED = 90;
+      const REFEREE_RETREAT_SPEED = 70;
+      const REFEREE_COLLISION_RADIUS = 18;
+      const GOAL_HEIGHT = 140;
+      const GOAL_LINE_THRESHOLD = 6;
+      const PENALTY_BOX_WIDTH = 120;
+      const PENALTY_BOX_HEIGHT = 200;
       const WHISTLE_FREQUENCY = 1200;
       const CROWD_OSC_FREQUENCY = 180;
       const CROWD_LFO_FREQUENCY = 0.3;
@@ -363,10 +381,10 @@
         state.homeTeam = state.teams[state.homeIndex] || fallbackTeams[0];
         state.awayTeam = state.teams[state.awayIndex] || fallbackTeams[1];
         state.namePool = buildNamePool(state.teams.length ? state.teams : fallbackTeams);
-        state.rosters.home = createRoster(state.namePool, state.homeIndex * TEAM_OFFSET_MULTIPLIER);
+        state.rosters.home = createRoster(state.namePool, state.homeIndex * ROSTER_NAME_OFFSET_STEP);
         state.rosters.away = createRoster(
           state.namePool,
-          state.awayIndex * TEAM_OFFSET_MULTIPLIER + AWAY_OFFSET_BONUS
+          state.awayIndex * ROSTER_NAME_OFFSET_STEP + AWAY_ROSTER_NAME_OFFSET
         );
         updateScoreboard();
         if (state.scene) {
@@ -448,7 +466,8 @@
           this.displayName = name;
           this.color = color;
           this.homePosition = { ...position };
-          this.stamina = 60 + Math.random() * 40;
+          this.stamina = STAMINA_START_MIN + Math.random() * STAMINA_START_RANGE;
+          this.staminaDrainRate = STAMINA_DRAIN_BASE + Math.random() * STAMINA_DRAIN_VARIANCE;
           this.state = 'ZONAL_DEFENSE';
           this.hasBall = false;
           this.subAlerted = false;
@@ -480,7 +499,7 @@
         }
 
         updateStamina(dt) {
-          const drain = dt * (STAMINA_DRAIN_BASE + Math.random() * STAMINA_DRAIN_VARIANCE);
+          const drain = dt * this.staminaDrainRate;
           this.stamina = Math.max(0, this.stamina - drain);
           if (this.stamina < 20 && !this.subAlerted) {
             this.subAlerted = true;
@@ -511,11 +530,11 @@
           }
 
           if (this.state === 'ZONAL_DEFENSE') {
-            this.moveToward(this.homePosition, 80, context.dt, context.field);
+            this.moveToward(this.homePosition, AI_ZONAL_DEFENSE_SPEED, context.dt, context.field);
           } else if (this.state === 'OFFENSE') {
-            this.moveToward(context.ballPosition, 110, context.dt, context.field);
+            this.moveToward(context.ballPosition, AI_OFFENSE_SPEED, context.dt, context.field);
           } else if (this.state === 'DRIBBLING') {
-            this.moveToward(context.attackTarget, 130, context.dt, context.field);
+            this.moveToward(context.attackTarget, AI_DRIBBLING_SPEED, context.dt, context.field);
           }
         }
 
@@ -528,9 +547,9 @@
                 x: this.container.x + manualDirection.x * 120,
                 y: this.container.y + manualDirection.y * 120,
               };
-              this.moveToward(target, 160, context.dt, context.field);
+              this.moveToward(target, PLAYER_MANUAL_CONTROL_SPEED, context.dt, context.field);
             } else if (context.pointerTarget) {
-              this.moveToward(context.pointerTarget, 160, context.dt, context.field);
+              this.moveToward(context.pointerTarget, PLAYER_MANUAL_CONTROL_SPEED, context.dt, context.field);
             }
             return;
           }
@@ -587,14 +606,17 @@
           graphics.lineBetween(this.field.centerX, this.field.top, this.field.centerX, this.field.bottom);
           graphics.strokeCircle(this.field.centerX, this.field.centerY, 60);
 
-          const boxWidth = 120;
-          const boxHeight = 200;
-          graphics.strokeRect(this.field.left, this.field.centerY - boxHeight / 2, boxWidth, boxHeight);
           graphics.strokeRect(
-            this.field.right - boxWidth,
-            this.field.centerY - boxHeight / 2,
-            boxWidth,
-            boxHeight
+            this.field.left,
+            this.field.centerY - PENALTY_BOX_HEIGHT / 2,
+            PENALTY_BOX_WIDTH,
+            PENALTY_BOX_HEIGHT
+          );
+          graphics.strokeRect(
+            this.field.right - PENALTY_BOX_WIDTH,
+            this.field.centerY - PENALTY_BOX_HEIGHT / 2,
+            PENALTY_BOX_WIDTH,
+            PENALTY_BOX_HEIGHT
           );
         }
 
@@ -817,7 +839,7 @@
         findPlayerAt(x, y, players) {
           return players.find((player) => {
             const distance = Phaser.Math.Distance.Between(x, y, player.container.x, player.container.y);
-            return distance < 20;
+            return distance < PLAYER_SELECTION_RADIUS;
           });
         }
 
@@ -865,15 +887,15 @@
         updateBall(dt) {
           if (this.ball.owner) {
             const carrier = this.ball.owner;
-            const offset = carrier.lastMove.clone().scale(12);
+            const offset = carrier.lastMove.clone().scale(BALL_CARRIER_OFFSET);
             this.ball.sprite.setPosition(carrier.container.x + offset.x, carrier.container.y + offset.y);
-            if (Math.random() < PASS_PROBABILITY) {
+            if (Math.random() < PASS_PROBABILITY_PER_SECOND * dt) {
               this.releaseBall(carrier.lastMove.clone().scale(PASS_SPEED));
             }
           } else {
             this.ball.sprite.x += this.ball.velocity.x * dt;
             this.ball.sprite.y += this.ball.velocity.y * dt;
-            this.ball.velocity.scale(0.97);
+            this.ball.velocity.scale(BALL_FRICTION_COEFFICIENT);
           }
 
           this.ball.sprite.x = clamp(this.ball.sprite.x, this.field.left, this.field.right);
@@ -899,7 +921,7 @@
               this.ball.sprite.x,
               this.ball.sprite.y
             );
-            if (distance < 18 && (!closest || distance < closest.distance)) {
+            if (distance < BALL_POSSESSION_RADIUS && (!closest || distance < closest.distance)) {
               return { player, distance };
             }
             return closest;
@@ -912,43 +934,45 @@
         }
 
         updateReferee(dt) {
-          const targetDistance = 50;
+          const targetDistance = REFEREE_FOLLOW_DISTANCE;
           const dx = this.ball.sprite.x - this.referee.x;
           const dy = this.ball.sprite.y - this.referee.y;
           const distance = Math.hypot(dx, dy);
           if (distance > targetDistance) {
-            const vx = (dx / distance) * 90;
-            const vy = (dy / distance) * 90;
+            const vx = (dx / distance) * REFEREE_APPROACH_SPEED;
+            const vy = (dy / distance) * REFEREE_APPROACH_SPEED;
             this.referee.x += vx * dt;
             this.referee.y += vy * dt;
           } else if (distance < targetDistance - 10) {
-            const vx = (-dx / distance) * 70;
-            const vy = (-dy / distance) * 70;
+            const vx = (-dx / distance) * REFEREE_RETREAT_SPEED;
+            const vy = (-dy / distance) * REFEREE_RETREAT_SPEED;
             this.referee.x += vx * dt;
             this.referee.y += vy * dt;
           }
 
           const collision = this.players.some((player) => {
-            return Phaser.Math.Distance.Between(player.container.x, player.container.y, this.referee.x, this.referee.y) < 18;
+            return (
+              Phaser.Math.Distance.Between(player.container.x, player.container.y, this.referee.x, this.referee.y) <
+              REFEREE_COLLISION_RADIUS
+            );
           });
-          if (collision && Math.random() < FOUL_CALL_PROBABILITY) {
+          if (collision && Math.random() < FOUL_CALL_PROBABILITY_PER_SECOND * dt) {
             this.playWhistle();
             showEvent('Whistle! Foul called.');
           }
         }
 
         checkGoals() {
-          const goalHeight = 140;
           const inGoalY =
-            this.ball.sprite.y > this.field.centerY - goalHeight / 2 &&
-            this.ball.sprite.y < this.field.centerY + goalHeight / 2;
+            this.ball.sprite.y > this.field.centerY - GOAL_HEIGHT / 2 &&
+            this.ball.sprite.y < this.field.centerY + GOAL_HEIGHT / 2;
 
-          if (inGoalY && this.ball.sprite.x <= this.field.left + 6) {
+          if (inGoalY && this.ball.sprite.x <= this.field.left + GOAL_LINE_THRESHOLD) {
             state.scores.away += 1;
             updateScoreboard();
             showEvent('Away team scores!');
             this.resetPositions();
-          } else if (inGoalY && this.ball.sprite.x >= this.field.right - 6) {
+          } else if (inGoalY && this.ball.sprite.x >= this.field.right - GOAL_LINE_THRESHOLD) {
             state.scores.home += 1;
             updateScoreboard();
             showEvent('Home team scores!');
@@ -957,16 +981,14 @@
         }
 
         checkCrowdPulse() {
-          const boxWidth = 120;
-          const boxHeight = 200;
           const leftBox =
-            this.ball.sprite.x < this.field.left + boxWidth &&
-            this.ball.sprite.y > this.field.centerY - boxHeight / 2 &&
-            this.ball.sprite.y < this.field.centerY + boxHeight / 2;
+            this.ball.sprite.x < this.field.left + PENALTY_BOX_WIDTH &&
+            this.ball.sprite.y > this.field.centerY - PENALTY_BOX_HEIGHT / 2 &&
+            this.ball.sprite.y < this.field.centerY + PENALTY_BOX_HEIGHT / 2;
           const rightBox =
-            this.ball.sprite.x > this.field.right - boxWidth &&
-            this.ball.sprite.y > this.field.centerY - boxHeight / 2 &&
-            this.ball.sprite.y < this.field.centerY + boxHeight / 2;
+            this.ball.sprite.x > this.field.right - PENALTY_BOX_WIDTH &&
+            this.ball.sprite.y > this.field.centerY - PENALTY_BOX_HEIGHT / 2 &&
+            this.ball.sprite.y < this.field.centerY + PENALTY_BOX_HEIGHT / 2;
           const inBox = leftBox || rightBox;
           if (inBox && !this.crowdPulseActive) {
             this.crowdPulseActive = true;
