@@ -117,7 +117,7 @@
     }
 
     @media (prefers-reduced-motion: reduce) {
-      * { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; }
+      * { animation: none !important; transition: none !important; }
     }
   </style>
 </head>
@@ -152,6 +152,8 @@
       const bestEl = document.getElementById('best');
       const messageEl = document.getElementById('message');
       const startBtn = document.getElementById('startBtn');
+
+      const MAX_DELTA_SECONDS = 0.033;
 
       const state = {
         running: false,
@@ -317,7 +319,7 @@
             state.lastTime = time;
           }
 
-          const delta = Math.min((time - state.lastTime) / 1000, 0.033);
+          const delta = Math.min((time - state.lastTime) / 1000, MAX_DELTA_SECONDS);
           state.lastTime = time;
 
           const maxX = state.dimensions.width - state.current.width;
@@ -340,18 +342,16 @@
         }
       }
 
-      const activateDrop = (event) => {
-        if (event && event.cancelable) {
-          event.preventDefault();
-        }
+      const activateDrop = () => {
         dropCurrentBlock();
       };
 
-      gameArea.addEventListener('click', activateDrop, { passive: false });
-      gameArea.addEventListener('touchstart', activateDrop, { passive: false });
+      gameArea.addEventListener('click', activateDrop);
+      gameArea.addEventListener('touchstart', activateDrop, { passive: true });
       gameArea.addEventListener('keydown', (event) => {
         if (event.key === 'Enter' || event.key === ' ') {
-          activateDrop(event);
+          event.preventDefault();
+          activateDrop();
         }
       });
 
