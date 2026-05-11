@@ -3,17 +3,22 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Perfect Square Stacker</title>
+  <title>Ultimate Penalty Shootout</title>
   <style>
     :root {
-      --bg-hue: 230;
-      --panel: #111325;
-      --text: #f1f4ff;
-      --accent: #5df2ff;
-      --danger: #ff5da2;
+      --bg: #070a16;
+      --panel: #11162b;
+      --text: #f4f6ff;
+      --muted: #b8c0e3;
+      --accent: #4df5c5;
+      --danger: #ff6b6b;
+      --pitch: #1f8a47;
+      --pitch-dark: #16693a;
     }
 
-    * { box-sizing: border-box; }
+    * {
+      box-sizing: border-box;
+    }
 
     body {
       margin: 0;
@@ -22,699 +27,477 @@
       align-items: center;
       justify-content: center;
       background:
-        radial-gradient(circle at 20% 10%, hsl(var(--bg-hue) 70% 22%), #07070f 65%),
-        linear-gradient(
-          120deg,
-          hsl(calc(var(--bg-hue) + 40) 65% 16% / 0.85),
-          hsl(calc(var(--bg-hue) + 140) 70% 18% / 0.8)
-        );
-      background-size: 200% 200%;
-      animation: gradient-shift 18s ease infinite;
+        radial-gradient(circle at top, rgba(55, 64, 105, 0.8), rgba(6, 8, 20, 0.92)),
+        linear-gradient(160deg, #05060e, #090c1b 60%, #040508);
       color: var(--text);
-      font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
-      transition: background 0.35s ease;
+      font-family: "Inter", system-ui, -apple-system, Segoe UI, sans-serif;
       padding: 16px;
     }
 
-    .game-shell {
-      width: min(94vw, 390px);
-      background: color-mix(in oklab, var(--panel), black 12%);
-      border: 1px solid #2f355f;
-      border-radius: 16px;
-      padding: 14px;
-      box-shadow: 0 14px 36px rgb(0 0 0 / 45%);
+    .shootout-shell {
+      width: min(96vw, 560px);
+      background: color-mix(in oklab, var(--panel), black 18%);
+      border-radius: 18px;
+      border: 1px solid #2d3561;
+      box-shadow: 0 18px 42px rgba(0, 0, 0, 0.55);
       display: flex;
       flex-direction: column;
-      gap: 10px;
+      gap: 14px;
+      padding: 18px;
     }
 
-    .hud {
+    .top {
       display: flex;
       justify-content: space-between;
-      gap: 8px;
-      align-items: center;
-      flex-wrap: wrap;
-    }
-
-    .scores {
-      display: flex;
+      align-items: flex-start;
       gap: 12px;
-      font-size: 0.96rem;
     }
 
-    .scores strong { color: var(--accent); }
-    #score { display: inline-block; }
+    .eyebrow {
+      margin: 0;
+      font-size: 0.7rem;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--accent);
+      font-weight: 700;
+    }
 
-    #score.score-pop {
-      animation: score-pop 0.35s ease;
-      transform-origin: center;
+    h1 {
+      margin: 6px 0 4px;
+      font-size: 1.6rem;
+    }
+
+    .sub {
+      margin: 0;
+      font-size: 0.9rem;
+      color: var(--muted);
     }
 
     button {
-      border: 1px solid #36408a;
-      border-radius: 9px;
-      padding: 8px 12px;
+      border: 1px solid #39457a;
+      border-radius: 12px;
+      background: linear-gradient(180deg, #202a56, #121831);
       color: var(--text);
-      background: linear-gradient(180deg, #252f66, #19204a);
-      cursor: pointer;
       font-weight: 700;
-      animation: breathe 3.2s ease-in-out infinite;
-      transform-origin: center;
+      cursor: pointer;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
     }
 
-    button:focus-visible,
-    .game-area:focus-visible {
-      outline: 3px solid var(--accent);
-      outline-offset: 2px;
+    button:hover:not(:disabled) {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 14px rgba(0, 0, 0, 0.35);
     }
 
-    .game-area {
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .small-btn {
+      padding: 8px 12px;
+      font-size: 0.8rem;
+    }
+
+    .opponent-card {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 12px 14px;
+      background: #10162c;
+      border-radius: 14px;
+      border: 1px solid #2c3560;
+    }
+
+    .opponent-card h2 {
+      margin: 6px 0 4px;
+      font-size: 1.2rem;
+    }
+
+    .label {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--muted);
+    }
+
+    .opponent-team {
+      margin: 0;
+      color: #d2d8f4;
+      font-size: 0.9rem;
+    }
+
+    .opponent-logo {
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      background: #1d2444;
+      display: grid;
+      place-items: center;
+      font-size: 2.2rem;
+    }
+
+    .game-field {
       position: relative;
       width: 100%;
-      aspect-ratio: 3 / 5;
-      border-radius: 12px;
-      border: 1px solid #2e3260;
-      background: linear-gradient(180deg, rgb(21 23 42 / 92%), rgb(11 12 24 / 98%));
+      aspect-ratio: 4 / 5;
+      background: linear-gradient(180deg, var(--pitch), var(--pitch-dark));
+      border-radius: 16px;
+      border: 1px solid #2c3560;
       overflow: hidden;
-      touch-action: manipulation;
-      transition: box-shadow 0.25s ease, border-color 0.25s ease;
+      box-shadow: inset 0 0 24px rgba(0, 0, 0, 0.4);
     }
 
-    .game-shell.fever {
-      border-color: color-mix(in oklab, var(--accent), white 25%);
-      box-shadow:
-        0 0 22px rgb(255 232 150 / 40%),
-        0 16px 36px rgb(0 0 0 / 55%);
-      animation: fever-pulse 1.6s ease-in-out infinite;
-    }
-
-    .game-area.fever {
-      border-color: color-mix(in oklab, var(--accent), white 20%);
-      box-shadow: inset 0 0 18px rgb(93 242 255 / 30%);
-    }
-
-    .game-area.shake {
-      animation: shake 0.18s linear;
-    }
-
-    .block {
+    .game-field::before {
+      content: "";
       position: absolute;
-      height: 32px;
-      border-radius: 6px 6px 0 0;
-      box-shadow: 0 0 14px rgb(93 242 255 / 34%);
+      inset: 0;
+      background: repeating-linear-gradient(
+        90deg,
+        rgba(255, 255, 255, 0.08) 0,
+        rgba(255, 255, 255, 0.08) 2px,
+        transparent 2px,
+        transparent 24px
+      );
+      opacity: 0.35;
     }
 
-    .particle {
+    .goal-frame {
       position: absolute;
-      width: 6px;
-      height: 6px;
-      border-radius: 50%;
-      pointer-events: none;
-      opacity: 0.9;
-      animation: particle 0.7s ease-out forwards;
-      mix-blend-mode: screen;
+      top: 6%;
+      left: 10%;
+      width: 80%;
+      height: 30%;
+      border: 3px solid rgba(255, 255, 255, 0.9);
+      border-bottom: none;
+      border-radius: 12px 12px 0 0;
+      box-shadow: 0 0 16px rgba(255, 255, 255, 0.25);
     }
 
-    .message {
-      min-height: 1.3em;
+    .goal-frame::after {
+      content: "";
+      position: absolute;
+      inset: 10% 12% 0 12%;
+      border: 1px dashed rgba(255, 255, 255, 0.35);
+      border-bottom: none;
+    }
+
+    .goalie,
+    .ball {
+      position: absolute;
+      left: 50%;
+      transform: translate(-50%, 0);
+      transition: transform 0.65s ease;
+      z-index: 2;
+    }
+
+    .goalie {
+      bottom: 42%;
+      font-size: 3rem;
+    }
+
+    .ball {
+      bottom: 16%;
+      font-size: 2.4rem;
+    }
+
+    .ball.shot-left {
+      transform: translate(-180%, -220%);
+    }
+
+    .ball.shot-center {
+      transform: translate(-50%, -235%);
+    }
+
+    .ball.shot-right {
+      transform: translate(80%, -220%);
+    }
+
+    .goalie.dive-left {
+      transform: translate(-170%, -15%);
+    }
+
+    .goalie.dive-center {
+      transform: translate(-50%, -25%) scale(1.05);
+    }
+
+    .goalie.dive-right {
+      transform: translate(70%, -15%);
+    }
+
+    .status-panel {
+      min-height: 72px;
       text-align: center;
-      color: #b7beff;
+      display: grid;
+      gap: 4px;
+    }
+
+    .status-text {
+      margin: 0;
+      color: var(--muted);
       font-size: 0.95rem;
     }
 
-    .hint {
+    .result-text {
       margin: 0;
-      text-align: center;
-      color: #a9afd8;
-      font-size: 0.85rem;
+      font-size: 1.2rem;
+      font-weight: 800;
     }
 
-    @keyframes shake {
-      0%, 100% { transform: translateX(0); }
-      20% { transform: translateX(-8px); }
-      40% { transform: translateX(7px); }
-      60% { transform: translateX(-5px); }
-      80% { transform: translateX(4px); }
+    .result-text.goal {
+      color: var(--accent);
     }
 
-    @keyframes score-pop {
-      0% { transform: scale(1); }
-      35% { transform: scale(1.3); }
-      100% { transform: scale(1); }
+    .result-text.save {
+      color: var(--danger);
     }
 
-    @keyframes breathe {
-      0%, 100% { transform: scale(1); }
-      50% { transform: scale(1.04); }
+    .cpu-text {
+      margin: 0;
+      color: #d6dcfa;
+      font-size: 0.9rem;
     }
 
-    @keyframes gradient-shift {
-      0% { background-position: 0% 50%; }
-      50% { background-position: 100% 50%; }
-      100% { background-position: 0% 50%; }
+    .controls {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
     }
 
-    @keyframes particle {
-      0% { transform: translate(0, 0) scale(1); opacity: 1; }
-      100% { transform: translate(var(--dx), var(--dy)) scale(0.1); opacity: 0; }
+    .direction-btn {
+      padding: 14px 10px;
+      font-size: 1rem;
+      border-radius: 14px;
     }
 
-    @keyframes fever-pulse {
-      0%, 100% { box-shadow: 0 0 16px rgb(255 232 150 / 35%), 0 16px 36px rgb(0 0 0 / 55%); }
-      50% { box-shadow: 0 0 28px rgb(93 242 255 / 45%), 0 18px 40px rgb(0 0 0 / 55%); }
+    .primary-btn {
+      padding: 14px;
+      font-size: 1rem;
+      border-radius: 14px;
+      background: linear-gradient(135deg, #4df5c5, #44a3ff);
+      color: #04131b;
+      border: none;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
     }
 
     @media (prefers-reduced-motion: reduce) {
-      body { transition: none !important; animation: none !important; }
-      .game-area.shake { animation: none !important; }
-      .game-shell.fever { animation: none !important; }
-      button { animation: none !important; }
-      #score.score-pop { animation: none !important; }
-      .particle { animation: none !important; }
+      .goalie,
+      .ball,
+      button {
+        transition: none !important;
+      }
     }
   </style>
 </head>
 <body>
-  <main class="game-shell">
-    <div class="hud">
-      <div class="scores" aria-label="scoreboard">
-        <span>Score: <strong id="score">0</strong></span>
-        <span>Best: <strong id="best">0</strong></span>
+  <main class="shootout-shell">
+    <header class="top">
+      <div>
+        <p class="eyebrow">Ultimate Football Game</p>
+        <h1>Penalty Shootout</h1>
+        <p class="sub">Pick a direction and beat the keeper.</p>
       </div>
-      <button id="startBtn" type="button" aria-label="Start or restart game">Start Game</button>
+      <button id="newKeeperBtn" class="small-btn" type="button">New Keeper</button>
+    </header>
+
+    <section class="opponent-card" aria-live="polite">
+      <div>
+        <span class="label">Opponent Goalkeeper</span>
+        <h2 id="keeperName">Loading...</h2>
+        <p id="keeperTeam" class="opponent-team">Fetching team...</p>
+      </div>
+      <div class="opponent-logo" aria-hidden="true">🧤</div>
+    </section>
+
+    <section id="gameField" class="game-field" role="img" aria-label="Penalty area">
+      <div class="goal-frame" aria-hidden="true"></div>
+      <div id="goalie" class="goalie" aria-hidden="true">🧤</div>
+      <div id="ball" class="ball" aria-hidden="true">⚽</div>
+    </section>
+
+    <div class="status-panel">
+      <p id="statusText" class="status-text">Loading player data…</p>
+      <p id="resultText" class="result-text" aria-live="polite"></p>
+      <p id="cpuText" class="cpu-text"></p>
     </div>
 
-    <section
-      id="gameArea"
-      class="game-area"
-      role="application"
-      aria-label="Perfect Square Stacker game area. Tap, click, Enter, or Space to drop the moving block."
-      tabindex="0"
-    ></section>
+    <div class="controls" role="group" aria-label="Choose shooting direction">
+      <button class="direction-btn" data-direction="Left" type="button">Left</button>
+      <button class="direction-btn" data-direction="Center" type="button">Center</button>
+      <button class="direction-btn" data-direction="Right" type="button">Right</button>
+    </div>
 
-    <p id="message" class="message" aria-live="polite">Press Start to begin.</p>
-    <p class="hint">Tap/click game area (or press Enter/Space) to drop each block.</p>
+    <button id="startBtn" class="primary-btn" type="button">Start Shootout</button>
   </main>
 
   <script>
     (() => {
       'use strict';
 
-      const gameArea = document.getElementById('gameArea');
-      const scoreEl = document.getElementById('score');
-      const bestEl = document.getElementById('best');
-      const messageEl = document.getElementById('message');
+      const API_URL = 'https://www.thesportsdb.com/api/v1/json/3/searchplayers.php?p=Messi';
+      const directions = ['Left', 'Center', 'Right'];
+
+      const keeperNameEl = document.getElementById('keeperName');
+      const keeperTeamEl = document.getElementById('keeperTeam');
+      const statusText = document.getElementById('statusText');
+      const resultText = document.getElementById('resultText');
+      const cpuText = document.getElementById('cpuText');
       const startBtn = document.getElementById('startBtn');
-      const gameShell = document.querySelector('.game-shell');
+      const newKeeperBtn = document.getElementById('newKeeperBtn');
+      const ball = document.getElementById('ball');
+      const goalie = document.getElementById('goalie');
+      const directionButtons = Array.from(document.querySelectorAll('.direction-btn'));
 
-      const MAX_DELTA_SECONDS = 0.033;
-      const MAX_BLOCK_SPEED = 360;
-      const FEVER_STREAK = 3;
-      const FEVER_DURATION = 4500;
-      const PARTICLE_COUNT_RANGE = [10, 15];
-      const PALETTE = [200, 220, 245, 270, 295, 325, 350, 15, 45, 70];
-      const BASE_HUE = 220;
-      const HUE_INCREMENT = 9;
-      const PALETTE_HUE_MULTIPLIER = 7;
-      const FREQUENCY_SCORE_MULTIPLIER = 6;
-      const AUDIO_MASTER_GAIN = 0.08;
-      const HAPTIC_IMPACT_PATTERN = [200];
-      const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-      const parsedBest = Number.parseInt(localStorage.getItem('pss-best') || '0', 10);
-      const safeBest = Number.isNaN(parsedBest) ? 0 : parsedBest;
-
-      const GameStates = Object.freeze({
-        MENU: 'MENU',
-        PLAYING: 'PLAYING',
-        LEVEL_UP: 'LEVEL_UP',
-        GAME_OVER: 'GAME_OVER',
-      });
-
-      const state = {
-        running: false,
-        animationId: 0,
-        lastTime: 0,
-        score: 0,
-        best: safeBest,
-        stack: [],
-        current: null,
-        dimensions: { width: 0, height: 0 },
-        blockHeight: 32,
-        gameState: GameStates.MENU,
-        perfectStreak: 0,
-        feverActive: false,
-        feverEndsAt: 0,
+      const gameState = {
+        loading: true,
+        menu: false,
+        playing: false,
+        result: false,
+        opponentList: [],
+        opponent: null,
+        playerChoice: null,
+        cpuChoice: null,
+        outcome: '',
+        notice: '',
       };
 
-      const audioState = {
-        ctx: null,
-        master: null,
-      };
+      const shotClasses = ['shot-left', 'shot-center', 'shot-right'];
+      const diveClasses = ['dive-left', 'dive-center', 'dive-right'];
 
-      bestEl.textContent = String(state.best);
-
-      scoreEl.addEventListener('animationend', (event) => {
-        if (event.animationName === 'score-pop') {
-          scoreEl.classList.remove('score-pop');
-        }
-      });
-
-      function setMessage(text, isError = false) {
-        messageEl.textContent = text;
-        messageEl.style.color = isError ? 'var(--danger)' : '#b7beff';
+      function setState(next) {
+        gameState.loading = next === 'loading';
+        gameState.menu = next === 'menu';
+        gameState.playing = next === 'playing';
+        gameState.result = next === 'result';
+        updateUI();
       }
 
-      function randomInt(min, max) {
-        return Math.floor(Math.random() * (max - min + 1)) + min;
-      }
+      function updateUI() {
+        directionButtons.forEach((btn) => {
+          btn.disabled = !gameState.playing;
+        });
 
-      function updateBackground() {
-        const hue = (BASE_HUE + state.score * HUE_INCREMENT) % 360;
-        document.documentElement.style.setProperty('--bg-hue', String(hue));
-      }
+        newKeeperBtn.disabled = gameState.loading || gameState.playing || !gameState.opponentList.length;
 
-      function paletteColor(index, shift = 0) {
-        const hueShift = (state.score * PALETTE_HUE_MULTIPLIER + shift) % 360;
-        const hue = (PALETTE[index % PALETTE.length] + hueShift) % 360;
-        return `hsl(${hue} 85% 62%)`;
-      }
-
-      function createBlockElement(block, level) {
-        const el = document.createElement('div');
-        el.className = 'block';
-        el.style.width = `${block.width}px`;
-        el.style.left = `${block.x}px`;
-        el.style.bottom = `${block.y}px`;
-        el.style.background = paletteColor(level);
-        gameArea.appendChild(el);
-        block.el = el;
-      }
-
-      function burstParticles(x, y, level) {
-        if (prefersReducedMotion) {
-          return;
+        if (gameState.loading) {
+          statusText.textContent = 'Loading player data…';
+          startBtn.hidden = true;
+        } else if (gameState.menu) {
+          statusText.textContent = gameState.notice || 'Ready to shoot? Choose a direction.';
+          startBtn.hidden = false;
+          startBtn.textContent = 'Start Shootout';
+        } else if (gameState.playing) {
+          statusText.textContent = 'Pick Left, Center, or Right to shoot.';
+          startBtn.hidden = true;
+        } else if (gameState.result) {
+          statusText.textContent = 'Result in!';
+          startBtn.hidden = false;
+          startBtn.textContent = 'Shoot Again';
         }
 
-        const count = randomInt(PARTICLE_COUNT_RANGE[0], PARTICLE_COUNT_RANGE[1]);
-
-        for (let i = 0; i < count; i += 1) {
-          const particle = document.createElement('div');
-          particle.className = 'particle';
-          particle.style.left = `${x}px`;
-          particle.style.bottom = `${y}px`;
-          particle.style.background = paletteColor(level + i, i * 9);
-          particle.style.setProperty('--dx', `${(Math.random() - 0.5) * 60}px`);
-          particle.style.setProperty('--dy', `${Math.random() * 80 + 20}px`);
-          particle.addEventListener('animationend', () => {
-            particle.remove();
-          });
-          gameArea.appendChild(particle);
-        }
-      }
-
-      function popScore() {
-        if (prefersReducedMotion) {
-          return;
-        }
-        scoreEl.classList.remove('score-pop');
-        void scoreEl.offsetWidth;
-        scoreEl.classList.add('score-pop');
-      }
-
-      function shakeScreen() {
-        if (prefersReducedMotion) {
-          return;
-        }
-        gameArea.classList.remove('shake');
-        // Force reflow so shake animation restarts on consecutive slices.
-        void gameArea.offsetWidth;
-        gameArea.classList.add('shake');
-      }
-
-      function triggerHaptic(pattern) {
-        if ('vibrate' in navigator) {
-          navigator.vibrate(pattern);
-        }
-      }
-
-      function ensureAudio() {
-        if (!audioState.ctx) {
-          const AudioContext = window.AudioContext || window.webkitAudioContext;
-          if (!AudioContext) {
-            return;
-          }
-          audioState.ctx = new AudioContext();
-          audioState.master = audioState.ctx.createGain();
-          audioState.master.gain.value = AUDIO_MASTER_GAIN;
-          audioState.master.connect(audioState.ctx.destination);
-        }
-
-        if (audioState.ctx && audioState.ctx.state === 'suspended') {
-          audioState.ctx.resume();
-        }
-      }
-
-      function playTone({ type = 'sine', frequency = 440, duration = 0.12 }) {
-        ensureAudio();
-        if (!audioState.ctx || !audioState.master) {
-          return;
-        }
-
-        const now = audioState.ctx.currentTime;
-        const oscillator = audioState.ctx.createOscillator();
-        const gain = audioState.ctx.createGain();
-        const feverBoost = state.feverActive ? 120 : 0;
-
-        oscillator.type = type;
-        oscillator.frequency.setValueAtTime(
-          frequency + state.score * FREQUENCY_SCORE_MULTIPLIER + feverBoost,
-          now
-        );
-        gain.gain.setValueAtTime(0, now);
-        gain.gain.linearRampToValueAtTime(0.14, now + 0.01);
-        gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
-
-        oscillator.connect(gain);
-        gain.connect(audioState.master);
-        oscillator.start(now);
-        oscillator.stop(now + duration);
-      }
-
-      function playSound(kind) {
-        const soundMap = {
-          perfect: { frequency: 520, duration: 0.12, type: 'sine' },
-          slice: { frequency: 360, duration: 0.15, type: 'triangle' },
-          miss: { frequency: 220, duration: 0.22, type: 'sawtooth' },
-          fever: { frequency: 720, duration: 0.18, type: 'square' },
-        };
-        const config = soundMap[kind];
-        if (config) {
-          playTone(config);
-        }
-      }
-
-      function measure() {
-        state.dimensions.width = gameArea.clientWidth;
-        state.dimensions.height = gameArea.clientHeight;
-      }
-
-      function nextBlock() {
-        const prev = state.stack[state.stack.length - 1];
-        const width = prev ? prev.width : state.dimensions.width * 0.7;
-        const y = state.stack.length * state.blockHeight;
-
-        if (y + state.blockHeight > state.dimensions.height) {
-          endGame('Tower reached the top. Nice run!');
-          return;
-        }
-
-        state.current = {
-          x: 0,
-          y,
-          width,
-          speed: Math.min(180 + state.stack.length * 8, MAX_BLOCK_SPEED),
-          dir: 1,
-          el: null,
-        };
-
-        createBlockElement(state.current, state.stack.length + 1);
-      }
-
-      function resetGameBoard() {
-        gameArea.innerHTML = '';
-        state.stack = [];
-        state.score = 0;
-        state.current = null;
-        scoreEl.textContent = '0';
-        updateBackground();
-      }
-
-      function endGame(text) {
-        if (state.score > state.best) {
-          state.best = state.score;
-          localStorage.setItem('pss-best', String(state.best));
-          bestEl.textContent = String(state.best);
-        }
-        state.perfectStreak = 0;
-        state.feverActive = false;
-        state.feverEndsAt = 0;
-        gameShell.classList.remove('fever');
-        gameArea.classList.remove('fever');
-        setState(GameStates.GAME_OVER, { message: text });
-      }
-
-      function dropCurrentBlock() {
-        if (!state.running || !state.current) {
-          return;
-        }
-
-        ensureAudio();
-        const prev = state.stack[state.stack.length - 1];
-        const current = state.current;
-
-        const left = Math.max(prev.x, current.x);
-        const right = Math.min(prev.x + prev.width, current.x + current.width);
-        const overlap = right - left;
-
-        if (overlap <= 0) {
-          triggerHaptic(HAPTIC_IMPACT_PATTERN);
-          playSound('miss');
-          shakeScreen();
-          endGame('Missed! Press Start to try again.');
-          return;
-        }
-
-        const sliced = overlap < current.width - 0.5;
-        current.x = left;
-        current.width = overlap;
-        current.el.style.left = `${current.x}px`;
-        current.el.style.width = `${current.width}px`;
-
-        state.stack.push(current);
-        state.current = null;
-        state.score = state.stack.length - 1;
-        scoreEl.textContent = String(state.score);
-        popScore();
-        updateBackground();
-
-        burstParticles(
-          current.x + current.width / 2,
-          current.y + state.blockHeight / 2,
-          state.stack.length
-        );
-
-        if (sliced) {
-          state.perfectStreak = 0;
-          shakeScreen();
-          triggerHaptic(HAPTIC_IMPACT_PATTERN);
-          playSound('slice');
-          setMessage('Sliced! Keep balancing.');
+        if (gameState.result) {
+          resultText.textContent = gameState.outcome;
+          resultText.classList.toggle('goal', gameState.outcome === 'GOAL!');
+          resultText.classList.toggle('save', gameState.outcome === 'SAVED!');
+          cpuText.textContent = `Goalie dives ${gameState.cpuChoice}.`;
         } else {
-          state.perfectStreak += 1;
-          triggerHaptic(HAPTIC_IMPACT_PATTERN);
-          playSound('perfect');
-          setMessage('Perfect drop!');
+          resultText.textContent = '';
+          resultText.classList.remove('goal', 'save');
+          cpuText.textContent = '';
         }
-
-        if (state.perfectStreak >= FEVER_STREAK && !state.feverActive) {
-          startFever();
-        }
-        nextBlock();
       }
 
-      function moveCurrentBlock(time) {
+      function updateOpponent(player) {
+        const name = player?.strPlayer?.trim() || 'Mystery Keeper';
+        const team = player?.strTeam?.trim() || 'Unknown Club';
+        keeperNameEl.textContent = name;
+        keeperTeamEl.textContent = `Team: ${team}`;
+        gameState.opponent = player || null;
+      }
+
+      function pickOpponent() {
+        const players = gameState.opponentList;
+        if (!players.length) {
+          updateOpponent(null);
+          return;
+        }
+
+        const keepers = players.filter((player) =>
+          String(player?.strPosition || '').toLowerCase().includes('goalkeeper')
+        );
+        const pool = keepers.length ? keepers : players;
+        const selection = pool[Math.floor(Math.random() * pool.length)];
+        updateOpponent(selection);
+      }
+
+      async function loadOpponents() {
+        setState('loading');
+        gameState.notice = '';
+
         try {
-          if (!state.running || !state.current) {
-            return;
+          const response = await fetch(API_URL);
+          if (!response.ok) {
+            throw new Error('Failed to load player data.');
           }
-
-          if (!state.lastTime) {
-            state.lastTime = time;
-          }
-
-          const delta = Math.min((time - state.lastTime) / 1000, MAX_DELTA_SECONDS);
-          state.lastTime = time;
-
-          const maxX = state.dimensions.width - state.current.width;
-          state.current.x += state.current.speed * delta * state.current.dir;
-
-          if (state.current.x <= 0) {
-            state.current.x = 0;
-            state.current.dir = 1;
-          } else if (state.current.x >= maxX) {
-            state.current.x = maxX;
-            state.current.dir = -1;
-          }
-
-          state.current.el.style.left = `${state.current.x}px`;
+          const data = await response.json();
+          const players = Array.isArray(data?.player) ? data.player : [];
+          gameState.opponentList = players;
+          pickOpponent();
+          setState('menu');
         } catch (error) {
-          console.error('Game loop error:', error);
-          setState(GameStates.GAME_OVER, { message: 'Unexpected error. Press Start to reset.' });
+          console.error(error);
+          gameState.opponentList = [];
+          updateOpponent(null);
+          gameState.notice = 'Unable to reach the API. Using a local keeper instead.';
+          setState('menu');
         }
       }
 
-      function ensureLoop() {
-        if (state.animationId) {
-          return;
-        }
-        state.lastTime = 0;
-        state.animationId = requestAnimationFrame(loop);
+      function resetShot() {
+        ball.classList.remove(...shotClasses);
+        goalie.classList.remove(...diveClasses);
       }
 
-      function loop(time) {
-        const handler = stateHandlers[state.gameState];
-        if (handler) {
-          handler.update(time);
-          handler.draw();
-        }
-
-        if (state.gameState === GameStates.PLAYING || state.gameState === GameStates.LEVEL_UP) {
-          state.animationId = requestAnimationFrame(loop);
-        } else {
-          state.animationId = 0;
-        }
+      function animateShot(playerChoice, cpuChoice) {
+        resetShot();
+        void ball.offsetWidth;
+        ball.classList.add(`shot-${playerChoice.toLowerCase()}`);
+        goalie.classList.add(`dive-${cpuChoice.toLowerCase()}`);
       }
 
-      function startFever() {
-        state.feverActive = true;
-        state.feverEndsAt = performance.now() + FEVER_DURATION;
-        state.perfectStreak = 0;
-        playSound('fever');
-        setState(GameStates.LEVEL_UP);
-      }
-
-      function endFever() {
-        state.feverActive = false;
-        gameShell.classList.remove('fever');
-        gameArea.classList.remove('fever');
-        setMessage('Fever over. Keep stacking!');
-        setState(GameStates.PLAYING);
-      }
-
-      const stateHandlers = {
-        [GameStates.MENU]: {
-          enter() {
-            state.running = false;
-            cancelAnimationFrame(state.animationId);
-            state.animationId = 0;
-            setMessage('Press Start to begin.');
-            startBtn.textContent = 'Start Game';
-            gameShell.classList.remove('fever');
-            gameArea.classList.remove('fever');
-          },
-          update() {},
-          draw() {},
-        },
-        [GameStates.PLAYING]: {
-          enter(options = {}) {
-            state.running = true;
-            if (options.reset) {
-              measure();
-              resetGameBoard();
-              state.lastTime = 0;
-              state.perfectStreak = 0;
-              state.feverActive = false;
-              state.feverEndsAt = 0;
-              gameShell.classList.remove('fever');
-              gameArea.classList.remove('fever');
-
-              const base = {
-                x: state.dimensions.width * 0.15,
-                y: 0,
-                width: state.dimensions.width * 0.7,
-                el: null,
-              };
-
-              createBlockElement(base, 0);
-              state.stack.push(base);
-              nextBlock();
-              setMessage('Stack perfectly for maximum score.');
-              gameArea.focus();
-            }
-            startBtn.textContent = 'Restart';
-            ensureLoop();
-          },
-          update(time) {
-            moveCurrentBlock(time);
-          },
-          draw() {},
-        },
-        [GameStates.LEVEL_UP]: {
-          enter() {
-            state.running = true;
-            gameShell.classList.add('fever');
-            gameArea.classList.add('fever');
-            startBtn.textContent = 'Restart';
-            setMessage('Fever mode! Keep the streak alive.');
-            ensureLoop();
-          },
-          update(time) {
-            moveCurrentBlock(time);
-            if (performance.now() >= state.feverEndsAt) {
-              endFever();
-            }
-          },
-          draw() {},
-        },
-        [GameStates.GAME_OVER]: {
-          enter(options = {}) {
-            state.running = false;
-            cancelAnimationFrame(state.animationId);
-            state.animationId = 0;
-            gameShell.classList.remove('fever');
-            gameArea.classList.remove('fever');
-            if (options.message) {
-              setMessage(options.message, true);
-            }
-            startBtn.textContent = 'Restart';
-          },
-          update() {},
-          draw() {},
-        },
-      };
-
-      function setState(nextState, options = {}) {
-        if (state.gameState === nextState && !options.reset) {
+      function handleShot(direction) {
+        if (!gameState.playing) {
           return;
         }
 
-        const currentHandler = stateHandlers[state.gameState];
-        if (currentHandler && currentHandler.exit) {
-          currentHandler.exit();
-        }
-
-        state.gameState = nextState;
-        const nextHandler = stateHandlers[nextState];
-        if (nextHandler && nextHandler.enter) {
-          nextHandler.enter(options);
-          nextHandler.draw();
-        }
+        const cpuChoice = directions[Math.floor(Math.random() * directions.length)];
+        gameState.playerChoice = direction;
+        gameState.cpuChoice = cpuChoice;
+        gameState.outcome = direction !== cpuChoice ? 'GOAL!' : 'SAVED!';
+        animateShot(direction, cpuChoice);
+        setState('result');
       }
 
-      const activateDrop = () => {
-        dropCurrentBlock();
-      };
-
-      gameArea.addEventListener('pointerdown', activateDrop);
-      gameArea.addEventListener('keydown', (event) => {
-        if (event.key === 'Enter' || event.key === ' ') {
-          event.preventDefault();
-          activateDrop();
-        }
+      directionButtons.forEach((button) => {
+        button.addEventListener('click', () => {
+          handleShot(button.dataset.direction);
+        });
       });
 
       startBtn.addEventListener('click', () => {
-        ensureAudio();
-        setState(GameStates.PLAYING, { reset: true });
-      });
-      window.addEventListener('resize', () => {
-        if (!state.running) {
-          measure();
-        }
+        resetShot();
+        gameState.outcome = '';
+        gameState.cpuChoice = null;
+        gameState.playerChoice = null;
+        setState('playing');
       });
 
-      setState(GameStates.MENU);
+      newKeeperBtn.addEventListener('click', () => {
+        pickOpponent();
+      });
+
+      loadOpponents();
     })();
   </script>
 </body>
