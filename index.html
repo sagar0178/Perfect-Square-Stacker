@@ -158,7 +158,7 @@
       const MAX_BLOCK_SPEED = 360;
 
       const parsedBest = Number.parseInt(localStorage.getItem('pss-best') || '0', 10);
-      const safeBest = Number.isFinite(parsedBest) ? parsedBest : 0;
+      const safeBest = Number.isNaN(parsedBest) ? 0 : parsedBest;
 
       const state = {
         running: false,
@@ -202,6 +202,7 @@
 
       function shakeScreen() {
         gameArea.classList.remove('shake');
+        // Force reflow so shake animation restarts on consecutive slices.
         void gameArea.offsetWidth;
         gameArea.classList.add('shake');
       }
