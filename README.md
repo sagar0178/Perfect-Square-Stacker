@@ -1,5 +1,5 @@
 # Perfect-Square-Stacker
-A front-end penalty shootout game that lets you pick Left, Center, or Right against an AI keeper.
+A front-end 11v11 football mini-simulation where you control the home team and score against AI opponents.
 Opponent details are fetched from TheSportsDB API.
 
 ## How to Play
